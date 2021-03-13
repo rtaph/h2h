@@ -1,0 +1,31 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+library(tidyverse)
+library(igraph)
+ 
+```
+
+```{r}
+combined_data <- read.csv('data/processed/combined_data.csv')
+stats_can_data <- read_csv("data/processed/stats_can_data.csv")
+```
+
+```{r}
+stats_can_data %>% group_by(CCID) 
+
+links_b_to_c <- combined_data %>% select(NAME, id, IC_ID) %>% rename(from = id, to = IC_ID)
+links_parent_to_child <- combined_data %>% group_by(PID) %>% select(NAME,id, IC_ID, PID) %>% rename(from = IC_ID, to = PID)
+```
+```{r}
+links_b_to_c
+links_parent_to_child
+```
+
+
+```{r}
+combined_data %>% filter(id == 'B35')
+stats_can_data %>% filter(CCID == '82928847')
+```
