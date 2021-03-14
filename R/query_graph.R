@@ -60,8 +60,7 @@ viz_graph <- function(bname = "Gyoza Bar Ltd") {
 
   data <- toVisNetworkData(network)
   s <- function(x) if_else(is.na(x), "", x)
-  data$nodes <- data$nodes[, 1, drop = FALSE] %>%
-    left_join(nodes, by = "id") %>%
+  data$nodes <- data$nodes %>%
     mutate(
       label = str_glue("{s(LicenceNumber)}
                         {s(BusinessName)}
