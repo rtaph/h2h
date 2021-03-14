@@ -116,7 +116,7 @@ app$callback(
     viz <- viz_graph(x)
 
     # workaround
-    tempfile <- here::here("outputs", "network.html")
+    tempfile <- here::here("network.html")
     htmlwidgets::saveWidget(viz, file = tempfile)
     paste(readLines(tempfile), collapse = "")
   }
