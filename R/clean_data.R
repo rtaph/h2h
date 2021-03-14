@@ -53,6 +53,7 @@ data_vbr <- function(path = "data-raw/license_data.csv",
 
   vbr <- vbr_raw %>%
     mutate(lower = tolower(BusinessName)) %>%
+    dplyr::filter(FOLDERYEAR>=10) %>%
     mutate(across(NumberofEmployees, as.numeric),
       lat = str_extract(Geom, "(?<=\\[)-?\\d+\\.\\d+(?=,)"),
       lon = str_extract(Geom, "(?<=, )-?\\d+\\.\\d+(?=\\])"),
@@ -126,7 +127,7 @@ data_statscan <- function(path = "data-processed/combined_data.csv",
 #' \dontrun{
 #' build_graph(save_to_pkg = FALSE)
 #' }
-build_graph <- function(vrb = data_vbr(),
+build_graph <- function(vbr = data_vbr(),
                         statscan = data_statscan(),
                         save_to_pkg = TRUE) {
   byyear <- split(vbr, paste0("Y", vbr$FOLDERYEAR))
@@ -165,7 +166,7 @@ build_graph <- function(vrb = data_vbr(),
 
   # TODO: fuzzy join on remaining, as well as block candidates
 
-  nodes <- h2h::vbr %>%
+  nodes <- vbr %>%
     select(
       id, BusinessName, FOLDERYEAR, LicenceRSN,
       LicenceNumber, BusinessTradeName, Status
