@@ -13,6 +13,10 @@ custom_css <- function() {
     "background-color" = "rgba(220, 220, 220, 0.5)"
   )
 
+  css$noborder <- list(
+    "border-width" = "0"
+  )
+
   # Dashboard header parameters
   css$header <- list(
     "background-color" =  "gray",
