@@ -14,8 +14,8 @@ Authors : Debananda Sarkar, Rafael Pilliard Hellwig, Selma Duric, Tanmay Sharma,
 
 ### Code Usage:
 1. Creating csv and comparison of Business Licences data and GoogleMaps data: Examples to run from GitBash
-  - `python src/get_google_data.py -i "data/raw/license_data.csv" -o "data/processed"`
-  - `python src/get_google_data.py -i "data/raw/license_data.csv" -o "data/processed" --name "First Memorial Services Ltd"`
-  - `python src/get_google_data.py -i "data/raw/license_data.csv" -o "data/processed" --type "Casino"`
+  - `python src/get_google_data.py -i "data-raw/license_data.csv" -o "data-processed"`
+  - `python src/get_google_data.py -i "data-raw/license_data.csv" -o "data-processed" --name "First Memorial Services Ltd"`
+  - `python src/get_google_data.py -i "data-raw/license_data.csv" -o "data-processed" --type "Casino"`
   
   Note: In order to access GoogleMaps data, this code requires secret API_Key. 
