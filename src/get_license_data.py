@@ -58,10 +58,10 @@ def main(target_file):
 
         dataset_df = pd.concat([dataset_df_2, dataset_df_1], ignore_index=True)
 
-        cov_data = cov_data.assign(NumberofEmployees = cov_data.NumberofEmployees.apply(lambda x: np.nan if x=="000" else x))
-        cov_data = cov_data.assign(perc_missing = cov_data.isnull().sum(axis=1)/cov_data.shape[1]*100)
-        cov_data = cov_data.assign(prov_cleaned = cov_data.Province.apply(prov_cleanup))
-        cov_data = cov_data.assign(age =  datetime.today().year-2000- cov_data.FOLDERYEAR)
+        dataset_df = dataset_df.assign(NumberofEmployees = dataset_df.NumberofEmployees.apply(lambda x: np.nan if x=="000" else x))
+        dataset_df = dataset_df.assign(perc_missing = dataset_df.isnull().sum(axis=1)/dataset_df.shape[1]*100)
+        dataset_df = dataset_df.assign(prov_cleaned = dataset_df.Province.apply(prov_cleanup))
+        dataset_df = dataset_df.assign(age =  datetime.today().year-2000- dataset_df.FOLDERYEAR)
 
 
 

@@ -17,7 +17,7 @@ from docopt import docopt
 opt = docopt(__doc__)
 
 def main():
-    cov_data = pd.read_csv("data/raw/license_data_old.csv", sep=",", low_memory=False, dtype={20:'str'} )
+    cov_data = pd.read_csv("data/raw/license_data.csv", sep=",", low_memory=False, dtype={20:'str'} )
     stat_canada_data = pd.read_csv('data/raw/linked_corp_data.csv')
 
 
