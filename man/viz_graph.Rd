@@ -17,5 +17,6 @@ Plot a Temporal Ego Network of a Business' Licenses
 }
 \examples{
 bname <- "MML Properties Ltd"
+bname <- "Selarc Developments Ltd"
 viz_graph(bname)
 }
