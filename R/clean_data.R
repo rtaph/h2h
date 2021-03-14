@@ -91,7 +91,7 @@ data_statscan <- function(path = "data-processed/combined_data.csv",
   sc_raw <- read.csv(path2)
   sc_proc <- sc_raw %>%
     as_tibble() %>%
-    select(CCID, PID, NAME) %>%
+    select(CCID, PID, NAME, foreign_ctl = CCTL) %>%
     mutate(across(c(PID, CCID), ~ paste0("C", .)))
 
   # Edgelist: Statscan -> Statscan
@@ -100,7 +100,8 @@ data_statscan <- function(path = "data-processed/combined_data.csv",
   #  filter(from %in% el1$to)
 
   # Nodelist: Statscan
-  nl <- distinct(sc, id = CCID, BusinessName = NAME) %>%
+  nl <- distinct(sc, id = CCID, BusinessName = NAME,
+                 foreign_ctl) %>%
     dplyr::filter(id %in% el1$to | id %in% el1$from)
 
   # combined edgelist

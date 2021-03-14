@@ -4,14 +4,14 @@
 \alias{build_graph}
 \title{Build the Business Graph}
 \usage{
-build_graph(vrb = data_vbr(), statscan = data_statscan(), save_to_pkg = TRUE)
+build_graph(vbr = data_vbr(), statscan = data_statscan(), save_to_pkg = TRUE)
 }
 \arguments{
-\item{vrb}{The Vancouver business registry dataset (saved in the package as
-\code{vbr})}
-
 \item{save_to_pkg}{Whether or not the graph should be saved to the package
 data directory. Defaults to TRUE.}
+
+\item{vrb}{The Vancouver business registry dataset (saved in the package as
+\code{vbr})}
 }
 \value{
 
