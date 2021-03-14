@@ -4,8 +4,12 @@
 '''This script will pull data from a source url
 and store it in a specified file
 
-Usage: join_license_linked_corp.py
+Usage: join_license_linked_corp.py  --license_file=<license_file>  --company_hierarchy_file=<company_hierarchy_file>  --target_file=<target_file>
 
+Options:
+--license_file=<license_file>                           Business License file
+--company_hierarchy_file=<company_hierarchy_file>       Company Hierarchy File
+--target_file=<target_file>                             Target file name to store data (with path)
 '''
 
 import pandas as pd
@@ -16,9 +20,9 @@ from docopt import docopt
 
 opt = docopt(__doc__)
 
-def main():
-    cov_data = pd.read_csv("data/raw/license_data.csv", sep=",", low_memory=False, dtype={20:'str'} )
-    stat_canada_data = pd.read_csv('data/raw/linked_corp_data.csv')
+def main(license_file, company_hierarchy_file, target_file):
+    cov_data = pd.read_csv(license_file, sep=",", low_memory=False, dtype={20:'str'} )
+    stat_canada_data = pd.read_csv(company_hierarchy_file)
 
 
     cov_data = cov_data.assign(BusinessName_join = cov_data.BusinessName.str.lower().str.strip())
@@ -65,8 +69,8 @@ def main():
 
     merged_df = pd.concat([merged_BN_df,merged_BTN_df], axis=0)
 
-    merged_df.to_csv('data/processed/combined_data.csv', index=False)
+    merged_df.to_csv(target_file, index=False)
 
 if __name__=="__main__":
-    main()
+    main(opt["--license_file"], opt["--company_hierarchy_file"], opt["--target_file"])
 
