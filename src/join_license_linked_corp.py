@@ -17,8 +17,8 @@ from docopt import docopt
 opt = docopt(__doc__)
 
 def main():
-    cov_data = pd.read_csv("data/raw/license_data.csv", sep=",", low_memory=False, dtype={20:'str'} )
-    stat_canada_data = pd.read_csv('data/raw/linked_corp_data.csv')
+    cov_data = pd.read_csv("data-raw/license_data.csv", sep=",", low_memory=False, dtype={20:'str'} )
+    stat_canada_data = pd.read_csv('data-raw/linked_corp_data.csv')
 
 
     cov_data = cov_data.assign(BusinessName_join = cov_data.BusinessName.str.lower().str.strip())
@@ -65,7 +65,7 @@ def main():
 
     merged_df = pd.concat([merged_BN_df,merged_BTN_df], axis=0)
 
-    merged_df.to_csv('data/processed/combined_data.csv', index=False)
+    merged_df.to_csv('data-processed/combined_data.csv', index=False)
 
 if __name__=="__main__":
     main()

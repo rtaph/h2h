@@ -4,7 +4,7 @@
 \alias{data_vbr}
 \title{Read-in the City-of-Vancouver Business License Data and Save to Package}
 \usage{
-data_vbr(path = "data-raw/business-licences.csv", save_to_pkg = TRUE)
+data_vbr(path = "data-raw/license_data.csv", save_to_pkg = TRUE)
 }
 \arguments{
 \item{path}{A path to a csv file}
