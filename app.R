@@ -14,18 +14,19 @@ devtools::load_all(".")
 # Load CSS Styles
 css <- custom_css()
 
-bnames <- unique(c(h2h::vbr$BusinessName,
-                   h2h::vbr$BusinessTradeName))
-bnames <- bnames[!is.na(bnames) & !bnames == ""]
+# bnames <- as.character(unique(forcats::fct_c(h2h::vbr$BusinessName,
+#                   h2h::vbr$BusinessTradeName)))
+# bnames <- bnames[!is.na(bnames) & !bnames == ""]
+# bnames <- c(head(bnames, 20))
 
-#app layout
+# app layout
 app <- Dash$new(external_stylesheets = dbcThemes$BOOTSTRAP)
 app$title("Company Risk Dashboard")
 app$layout(
   dbcContainer(
     list(
       htmlH1("Company Risk Dashboard",
-             style = css$header
+        style = css$header
       ),
       dbcRow(
         list(
@@ -36,22 +37,19 @@ app$layout(
             list(
               htmlBr(),
               dbcLabel("Company Name:"),
-              dccDropdown(id = "input_bname",
-                          options = head(
-                            map(bnames, ~ list(label = ., value = .)),
-                            n = 20
-                            ),
-                          value = "Gyoza Bar Ltd",
-                          clearable = TRUE,
-                          searchable = FALSE # TODO: test this out for speed
+              # dccDropdown(id = "input_bname",
+              #             options = map(bnames, ~ list(label = ., value = .)),
+              #             value = "Gyoza Bar Ltd",
+              #             clearable = TRUE,
+              #             searchable = FALSE # TODO: test this out for speed
+              # ),
+              dccInput(
+                id = "input_bname",
+                value = "Gyoza Bar Ltd"
               ),
-              #dccInput(id = "input_bname",
-              #        value = "MML Properties Ltd"
-              #),
               htmlBr(),
               dbcLabel("Address:"),
-              dccInput(
-              ),
+              dccInput(),
               htmlHr()
             )
           ),
@@ -66,18 +64,17 @@ app$layout(
                         list(
                           dbcCardBody(
                             htmlDiv(id = "network_div", children = list(
-                                htmlIframe(height = 500, width = 500,
-                                  id = "network_plot"
-                                )
+                              htmlIframe(
+                                height = 500, width = 500,
+                                id = "network_plot"
                               )
-                            )
+                            ))
                           )
                         )
                       ),
                       dbcCard(
                         list(
-                          dbcCardBody(
-                          )
+                          dbcCardBody()
                         )
                       )
                     )
@@ -88,9 +85,7 @@ app$layout(
                     list(
                       dbcCard(
                         list(
-                          dbcCardBody(
-
-                          )
+                          dbcCardBody()
                         )
                       )
                     )
@@ -112,14 +107,14 @@ app$callback(
   list(
     input("input_bname", "value")
   ),
-  function(x) {
+  memoise::memoize(function(x) {
     viz <- viz_graph(x)
 
     # workaround
     tempfile <- here::here("network.html")
     htmlwidgets::saveWidget(viz, file = tempfile)
     paste(readLines(tempfile), collapse = "")
-  }
+  })
 )
 
 if (Sys.getenv("DYNO") == "") {
@@ -130,5 +125,3 @@ if (Sys.getenv("DYNO") == "") {
 } else {
   app$run_server(host = "0.0.0.0")
 }
-
-

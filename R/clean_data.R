@@ -15,44 +15,51 @@
 #'   TRUE.
 #' @import readr dplyr tibble
 #' @importFrom tidyr replace_na
+#' @importFrom stringr str_extract
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' data_vbr(save_to_pkg = FALSE)
 #' }
-data_vbr <- function(path = "data-raw/business-licences.csv",
+data_vbr <- function(path = "data-raw/license_data.csv",
                      save_to_pkg = TRUE) {
   colspec <- cols(
+    .default = col_character(),
     FOLDERYEAR = col_double(),
-    # LicenceRSN = col_double(),
-    IssuedDate = col_datetime(format = ""),
-    ExpiredDate = col_date(format = ""),
-    # Unit = col_double(),
-    # House = col_double(),
-    Status = col_factor(),
-    LicenceRevisionNumber = col_factor(),
-    # Country  = col_factor(),
-    Province = col_factor(),
-    LocalArea = col_factor(),
-    UnitType = col_factor(),
+    LicenceRSN = col_double(),
+    LicenceRevisionNumber = col_double(),
+    IssuedDate = col_skip(), # col_date(format = ""),
+    ExpiredDate = col_skip(), # format = ""),
+    House = col_character(),
+    NumberofEmployees = col_double(),
     FeePaid = col_double(),
-    ExtractDate = col_datetime(format = ""),
-    .default = col_character()
+    ExtractDate = col_skip(),
+    perc_missing = col_double(),
+    age = col_double(),
+    BusinessType = col_factor(),
+    BusinessTradeName = col_factor(),
+    BusinessName = col_factor(),
+    Status = col_factor(),
+    UnitType = col_factor(),
+    LocalArea = col_factor(),
+    prov_cleaned = col_factor(),
+    Country = col_factor(),
+    Province = col_skip(),
+    City = col_skip()
   )
 
-  vbr_raw <- read_csv2(path, col_types = colspec)
+  vbr_raw <- read_csv(path, col_types = colspec)
 
   vbr <- vbr_raw %>%
-    replace_na(list(Country = "MISS")) %>%
     mutate(lower = tolower(BusinessName)) %>%
+    dplyr::filter(FOLDERYEAR>=10) %>%
     mutate(across(NumberofEmployees, as.numeric),
       lat = str_extract(Geom, "(?<=\\[)-?\\d+\\.\\d+(?=,)"),
       lon = str_extract(Geom, "(?<=, )-?\\d+\\.\\d+(?=\\])"),
       across(c(lon, lat), as.numeric)
     ) %>%
-    rowid_to_column("id") %>%
-    add_column(source = "B")
+    select(-Geom)
 
   if (save_to_pkg) {
     usethis::use_data(vbr, overwrite = TRUE)
@@ -60,25 +67,76 @@ data_vbr <- function(path = "data-raw/business-licences.csv",
   invisible(vbr)
 }
 
+#' Extract Network Data for Statstcan Inter-Corporate Ownership
+#'
+#' @param path The path to the linked data.
+#' @param path2 The path to the original statscan data.
+#'
+#' @return A list containing an edge list and a nodelist.
+#' @export
+data_statscan <- function(path = "data-processed/combined_data.csv",
+                          path2 = "data-raw/linked_corp_data.csv") {
+
+  # step1 : read-in the linked data
+  sc_linked <- read_csv(path, guess_max = 40000)
+  sc <- as_tibble(sc_linked) %>%
+    select(id, PID, CCID, NAME) %>%
+    mutate(across(c(PID, CCID), ~ paste0("C", .)))
+
+  # Edgelist: COVL -> Statscan
+  el1 <- select(sc, from = id, to = CCID)
+
+  # Step 2: read-in the original data for the statstcan portion of the
+  # network
+  sc_raw <- read.csv(path2)
+  sc_proc <- sc_raw %>%
+    as_tibble() %>%
+    select(CCID, PID, NAME) %>%
+    mutate(across(c(PID, CCID), ~ paste0("C", .)))
+
+  # Edgelist: Statscan -> Statscan
+  # el2 <- sc_proc %>%
+  #  select(from = CCID, to = PID) %>%
+  #  filter(from %in% el1$to)
+
+  # Nodelist: Statscan
+  nl <- distinct(sc, id = CCID, BusinessName = NAME) %>%
+    dplyr::filter(id %in% el1$to | id %in% el1$from)
+
+  # combined edgelist
+  # el <- bind_rows(el1, el2)
+  el <- el1
+
+  statscan <- list(el = el, nl = nl)
+  statscan
+}
+
 
 #' Build the Business Graph
 #'
-#' @param vrb The vancouver business registry dataset (saved in the package as
+#' @param vrb The Vancouver business registry dataset (saved in the package as
 #'    `vbr`)
 #' @param save_to_pkg Whether or not the graph should be saved to the package
 #'    data directory. Defaults to TRUE.
 #'
 #' @return
+#' @importFrom igraph V E vertex_attr graph_from_edgelist edge_attr
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' build_graph(save_to_pkg = FALSE)
 #' }
-build_graph <- function(vrb = h2h::data_vbr(), save_to_pkg = TRUE) {
+build_graph <- function(vbr = data_vbr(),
+                        statscan = data_statscan(),
+                        save_to_pkg = TRUE) {
   byyear <- split(vbr, paste0("Y", vbr$FOLDERYEAR))
 
-  edges <- tibble(id = numeric(0), id2 = numeric(0), rule = numeric(0))
+  edges <- tibble(
+    id = character(0),
+    id2 = character(0),
+    rule = numeric(0)
+  )
 
   # set order of joins
   byvars <- list(
@@ -108,10 +166,31 @@ build_graph <- function(vrb = h2h::data_vbr(), save_to_pkg = TRUE) {
 
   # TODO: fuzzy join on remaining, as well as block candidates
 
+  nodes <- vbr %>%
+    select(
+      id, BusinessName, FOLDERYEAR, LicenceRSN,
+      LicenceNumber, BusinessTradeName, Status
+    ) %>%
+    mutate(across(where(is.factor), as.character)) %>%
+    bind_rows(statscan$nl)
+
+
   # generate an igraph object and save
   links <- rename(edges, from = id, to = id2) %>%
-    mutate(across(c(to, from), ~ paste0("B", .)))
-  g <- igraph::graph_from_edgelist(as.matrix(links[, c("from", "to")]))
+    # mutate(across(c(to, from), ~ paste0("B", .))) %>%
+    mutate(weight = max(rule) - rule + 2) %>%
+    bind_rows(add_column(statscan$el, weight = 1L))
+
+  # make the igraph object
+  g <- graph_from_edgelist(as.matrix(links[, c("from", "to")]))
+  igraph::edge.attributes(g) <- list(weight = links$weight)
+
+  # Add names
+  i <- match(V(g)$name, nodes$id)
+  igraph::vertex_attr(g, "BusinessName") <- nodes[i, ]$BusinessName
+  igraph::vertex_attr(g, "LicenceNumber") <- nodes[i, ]$LicenceNumber
+  igraph::vertex_attr(g, "BusinessTradeName") <- nodes[i, ]$BusinessTradeName
+
   # TODO: Add singletons
   if (save_to_pkg) {
     usethis::use_data(g, overwrite = TRUE)
