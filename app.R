@@ -21,7 +21,7 @@ css <- custom_css()
 
 # app layout
 app <- Dash$new(external_stylesheets = dbcThemes$BOOTSTRAP)
-app$title("Company Risk Dashboard")
+app$title("CoV Business Risk Dashboard")
 app$layout(
   dbcContainer(
     list(
@@ -62,11 +62,16 @@ app$layout(
                     list(
                       dbcCard(
                         list(
+                          dbcAlert(
+                            #is_open = risk_score(bname) > 2,
+                            id = "card_score",
+                            color = "light"),
                           dbcCardBody(
                             htmlDiv(id = "network_div", children = list(
                               htmlIframe(
                                 height = 500, width = 500,
-                                id = "network_plot"
+                                id = "network_plot",
+                                style = css$noborder
                               )
                             ))
                           )
@@ -80,7 +85,7 @@ app$layout(
                     )
                   )
                 )),
-                dccTab(label = "Tab2", children = list(
+                dccTab(label = "Business Details", children = list(
                   htmlDiv(
                     list(
                       dbcCard(
@@ -115,6 +120,30 @@ app$callback(
     htmlwidgets::saveWidget(viz, file = tempfile)
     paste(readLines(tempfile), collapse = "")
   })
+)
+
+app$callback(
+  output("card_score", "children"),
+  list(
+    input("input_bname", "value")
+  ),
+  memoise::memoize(function(bname) {
+    r <- calc_risk(bname)
+    pr <- profile_risk(bname)
+
+    lev <- case_when(r <= 1 ~ "low risk",
+                     r <= 3 ~ "medium risk",
+                     TRUE ~ "high risk")
+
+    msg <- c()
+    msg[1] <- if_else(pr$missingdata, "has a lot of missing data", NA_character_)
+    msg[2] <- if_else(pr$recent, "does not have a long history", NA_character_)
+    msg[3] <- if_else(pr$foreign, "is not located in Canada", NA_character_)
+    msg[4] <- if_else(pr$status, "is inactive or shut", NA_character_)
+    msg <- glue::glue_collapse(na.omit(msg), sep = ", ", last = " and ")
+
+    str_glue("Risk Score: {r} / 4 ({lev}). This business {msg}.")
+    })
 )
 
 if (Sys.getenv("DYNO") == "") {
