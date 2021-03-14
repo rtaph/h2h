@@ -3,23 +3,8 @@ Author: Zeliha Ural Merpez
 
 Date: March,13 2021
 
-This script reads data and generates images and csv files to be used in further analysis.
-
-Usage: get_google_data.py -i=<input> -o=<output> [--name=<business_name>] [--type=<business_type>]
-
-Options:
--i <input>, --input <input>     Local raw data csv filename and path
--o <output>, --output <output>  Local output directory for created png
-[--name=<business_name>]                         Business name
-[--type=<business_type>]                         Business type
 """
 
-
-# example to run: python src/get_google_data.py -i "data-raw/license_data.csv" -o "data-processed"
-# example to run: python src/get_google_data.py -i "data-raw/license_data.csv" -o "data-processed" --name "First Memorial Services Ltd"
-# example to run: python src/get_google_data.py -i "data-raw/license_data.csv" -o "data-processed" --type "Casino"
-import sys
-import os
 import requests
 import json
 import pandas as pd
@@ -27,9 +12,7 @@ from bs4 import BeautifulSoup
 import altair as alt
 import numpy as np
 from math import sin, cos, sqrt, atan2, radians
-from docopt import docopt
-
-args = docopt(__doc__)
+import matplotlib.pyplot as plt
 
 def get_keys(path):
     with open(path) as f:
@@ -148,30 +131,98 @@ def google_map_figure(output_data):
     )
     return chart
 
-def main(input_file, output_dir):
-    cov_data = pd.read_csv(input_file, sep=";")
+def fancy_table(data, col_width=3.0, row_height=0.625, row_colors=['#f1f1f2', 'w'],
+                header_columns=0, ax=None, **kwargs):
 
-    keys = get_keys(".secret/key.json")
-    API_Key = keys['API_Key']
-    print(cov_data.shape)
+    """[Modified from ref: https://stackoverflow.com/questions/19726663/how-to-save-the-pandas-dataframe-series-data-as-a-figure]
+       [Prints given dataframe in a nice format, that is easy to save]
+    Parameters
+    ----------
+    data : [data frame]
+        [data frame]
+    col_width : float, optional
+        [column width], by default 3.0
+    row_height : float, optional
+        [row height], by default 0.625
+    row_colors : list, optional
+        [row color], by default ['#f1f1f2', 'w']
+    header_columns : int, optional
+        [header columns], by default 0
+    ax : [type], optional
+        [plotting table, by default None
+    Returns
+    -------
+    [object]
+        [figure]
+    """
+    if ax is None:
+        size = (np.array(data.shape[::-1]) + np.array([0, 1])) * np.array([col_width, row_height])
+        fig, ax = plt.subplots(figsize=size)
+        ax.axis('off')
+    mpl_table = ax.table(cellText=data.values, bbox=[0, 0, 1, 1], colLabels=data.columns, **kwargs)
+    mpl_table.auto_set_font_size(False)
+    mpl_table.set_fontsize(14)
 
-    formatted_cov_data = format_coordinate(cov_data, drop=True)
-    if business_name:
-        funerals = formatted_cov_data[formatted_cov_data['BusinessName'] == business_name]
-    else:
-        if business_type:
-            funerals = formatted_cov_data[formatted_cov_data['BusinessType'] == business_type]
+    for k, cell in mpl_table._cells.items():
+        cell.set_edgecolor('w')
+        if k[0] == 0 or k[1] < header_columns:
+            cell.set_text_props(weight='bold', color='w')
+            cell.set_facecolor('firebrick')
         else:
-            funerals = formatted_cov_data[formatted_cov_data['BusinessType'] == "Funeral Services"]
+            cell.set_facecolor(row_colors[k[0]%len(row_colors) ])
+    return ax.get_figure(), ax
 
-    output_data = get_comparison_dataframe(funerals, API_Key)
-    output_data.to_csv(path_or_buf= output_dir + '/google_map.csv', index=False)
-    chart = google_map_figure(output_data)
-    chart.save(output_dir + '/google_map.html')
+def generate_dataset_overview(data_frame):
+    """
+    Generates an overview of the dataset.
+    Also saves resulting table as file in given output folder.
+    Parameters:
+    -----------
+    data_frame : pandas.DataFrame
+        input path to be verified
+    output_folder : str
+        output folder path to save the chart
+    file_name : str
+        file name for generated chart image
+        
+    Returns:
+    -----------
+    None
+    """
+    data_overview = [
+            {"Dataset": "Number of features", "Value": len(data_frame.columns)},
+            {"Dataset": "Number of characters", "Value": len(data_frame)},
+            {"Dataset": "Number of Missing cells", "Value": (data_frame.isnull()).sum().sum()},
+            {"Dataset": "Percentage of Missing cells", "Value": round((data_frame.isnull()).sum().sum()/data_frame.size*100, 2)}
+        ]
+    overview_frame = pd.DataFrame(data_overview)
+    return overview_frame
 
-if __name__=="__main__":
-    input_file = args["--input"]
-    output_dir = args["--output"]
-    business_name = args["--name"]
-    business_type = args["--type"]
-    main(input_file, output_dir)
+def generate_feature_overview(data_frame):
+    """
+    Generates an overview of the features in dataset.
+    Also saves resulting table as file in given output folder.
+    Parameters:
+    -----------
+    data_frame : pandas.DataFrame
+        input path to be verified
+    output_folder : str
+        output folder path to save the chart
+    file_name : str
+        file name for generated chart image
+        
+    Returns:
+    -----------
+    None
+    """
+    distinct_class = dict()
+    nonnull_count = dict()
+
+    for col in data_frame.columns:
+        nonnull_count[col]=len(data_frame)-data_frame[col].isnull().sum()
+        distinct_class[col]=len(list(data_frame[col].unique()))
+
+    features_frame=pd.DataFrame([distinct_class, nonnull_count]).T.reset_index()
+    features_frame.columns=["Features","Distinct Class", "Non-Null Count"]
+    features_frame["Missing Percentage"]=round((len(data_frame) - features_frame["Non-Null Count"])/len(data_frame)*100,2)
+    return features_frame
