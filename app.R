@@ -3,7 +3,9 @@ library(dash)
 library(dashHtmlComponents)
 library(dashCoreComponents)
 library(dashBootstrapComponents)
-library(tidyverse)
+library(dplyr)
+library(purrr)
+library(stringr)
 library(devtools)
 
 # Load custom functions and data
@@ -11,6 +13,10 @@ devtools::load_all(".")
 
 # Load CSS Styles
 css <- custom_css()
+
+bnames <- unique(c(h2h::vbr$BusinessName,
+                   h2h::vbr$BusinessTradeName))
+bnames <- bnames[!is.na(bnames) & !bnames == ""]
 
 #app layout
 app <- Dash$new(external_stylesheets = dbcThemes$BOOTSTRAP)
@@ -30,11 +36,21 @@ app$layout(
             list(
               htmlBr(),
               dbcLabel("Company Name:"),
-              dccDropdown(
+              dccDropdown(id = "input_bname",
+                          options = head(
+                            map(bnames, ~ list(label = ., value = .)),
+                            n = 20
+                            ),
+                          value = "Gyoza Bar Ltd",
+                          clearable = TRUE,
+                          searchable = FALSE # TODO: test this out for speed
               ),
+              #dccInput(id = "input_bname",
+              #        value = "MML Properties Ltd"
+              #),
               htmlBr(),
               dbcLabel("Address:"),
-              dccDropdown(
+              dccInput(
               ),
               htmlHr()
             )
@@ -43,15 +59,17 @@ app$layout(
           dbcCol( # PLOTTING PANEL
             list(
               dccTabs(id = "tabs", children = list(
-                dccTab(label = "Risk Tab", children = list(
+                dccTab(label = "License History", children = list(
                   htmlDiv(
                     list(
                       dbcCard(
                         list(
                           dbcCardBody(
-                            dccGraph(
-                              id = "network_plot",
-                              config = list("displayModeBar" = FALSE)
+                            htmlDiv(id = "network_div", children = list(
+                                htmlIframe(height = 500, width = 500,
+                                  id = "network_plot"
+                                )
+                              )
                             )
                           )
                         )
@@ -89,6 +107,28 @@ app$layout(
   )
 )
 
-app$run_server(debug = T)
+app$callback(
+  output("network_plot", "srcDoc"),
+  list(
+    input("input_bname", "value")
+  ),
+  function(x) {
+    viz <- viz_graph(x)
+
+    # workaround
+    tempfile <- here::here("outputs", "network.html")
+    htmlwidgets::saveWidget(viz, file = tempfile)
+    paste(readLines(tempfile), collapse = "")
+  }
+)
+
+if (Sys.getenv("DYNO") == "") {
+  app$run_server(
+    debug = FALSE,
+    dev_tools_hot_reload = FALSE
+  )
+} else {
+  app$run_server(host = "0.0.0.0")
+}
 
 
