@@ -15,7 +15,7 @@ data-raw/license_data.csv : src/get_license_data.py
 data-raw/linked_corp_data.csv : src/get_linked_corp_data.py
 	python src/get_linked_corp_data.py --target_file=data-raw/linked_corp_data.csv
 
-data-processed/combined_data.csv : src/get_linked_corp_data.py data-raw/license_data.csv data-raw/linked_corp_data.csv
+data-processed/combined_data.csv : src/join_license_linked_corp.py data-raw/license_data.csv data-raw/linked_corp_data.csv
 	python src/join_license_linked_corp.py --license_file=data-raw/license_data.csv  --company_hierarchy_file=data-raw/linked_corp_data.csv  --target_file=data-processed/combined_data.csv
 
 data/vbr.rda : R/clean_data.R data-processed/combined_data.csv
