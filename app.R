@@ -3,11 +3,15 @@ library(dash)
 library(dashHtmlComponents)
 library(dashCoreComponents)
 library(dashBootstrapComponents)
+library(dashTable)
 library(dplyr)
 library(purrr)
 library(stringr)
 library(devtools)
 
+
+combined_data <- read.csv(here("data-processed/combined_data.csv"), fileEncoding="latin1")
+coi_data <- read.csv(here("data-processed/filtered_hierarchy_data.csv"), fileEncoding="latin1")
 # Load custom functions and data
 devtools::load_all(".")
 
@@ -42,7 +46,6 @@ app$layout(
               #             value = "Gyoza Bar Ltd",
               #             clearable = TRUE,
               #             searchable = FALSE # TODO: test this out for speed
-              # ),
               dccInput(
                 id = "input_bname",
                 value = "Gyoza Bar Ltd"
@@ -90,7 +93,28 @@ app$layout(
                     list(
                       dbcCard(
                         list(
-                          dbcCardBody()
+                          dbcCardBody(
+                            dbcLabel('Inter-corporate relationships:')
+                          ),
+                          # [[temp - to delete
+                          dccDropdown(
+                            id = 'dropdown_tab2',
+                              options = list(list(label = "Listel Canada Ltd", value = "Listel Canada Ltd"),
+                                             list(label = "something else", value = "something else"))
+                          ),
+                          # ]]
+                          dashDataTable(
+                            id = "table",
+                            page_size = 10,
+                            data = df_to_list(coi_data),
+                            columns = lapply(colnames(coi_data),
+                                             function(colName){
+                                               list(
+                                                 id = colName,
+                                                 name = colName
+                            )
+                            }),
+                          )
                         )
                       )
                     )
@@ -106,6 +130,23 @@ app$layout(
     )
   )
 )
+
+# update table based on selection
+
+app$callback(
+  list(output('table', 'data')),
+  list(input('dropdown_tab2', 'value')),
+  function(input_value) {
+    print(input_value)
+    # selected_PID <- 87132494
+    selected_PID <- combined_data %>% filter(BusinessName == input_value) %>% select("PID") %>% unique()
+    # columns <- c("CCID", "PID", "NAME", "LEVEL") %>% purrr::map(function(col) list(name = col, id = col))
+    # data <- df_to_list(coi_data)
+    data <- df_to_list(coi_data %>% filter(PID == 87132494)) #%>% select(unlist(cols)))
+    list(data)
+  }
+)
+
 
 app$callback(
   output("network_plot", "srcDoc"),
