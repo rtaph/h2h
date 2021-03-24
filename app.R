@@ -10,10 +10,14 @@ library(stringr)
 library(devtools)
 
 
-combined_data <- read.csv(here("data-processed/combined_data.csv"), fileEncoding="latin1")
-coi_data <- read.csv(here("data-processed/filtered_hierarchy_data.csv"), fileEncoding="latin1")
+
 # Load custom functions and data
 devtools::load_all(".")
+combined_data <- read.csv(here("data-processed/combined_data.csv"), fileEncoding="latin1")
+coi_data <- read.csv(here("data-processed/filtered_hierarchy_data.csv"), fileEncoding="latin1") %>%
+  rename("COUNTRY_OF_CONTROL" = "CCTL")
+table_columns <- c("LEVEL", "NAME", "CCID", "PID", "COUNTRY_OF_CONTROL")
+
 
 # Load CSS Styles
 css <- custom_css()
@@ -48,6 +52,7 @@ app$layout(
               #             searchable = FALSE # TODO: test this out for speed
               dccInput(
                 id = "input_bname",
+                # value = "Gyoza Bar Ltd"
                 value = "Gyoza Bar Ltd"
               ),
               htmlBr(),
@@ -96,18 +101,11 @@ app$layout(
                           dbcCardBody(
                             dbcLabel('Inter-corporate relationships:')
                           ),
-                          # [[temp - to delete
-                          dccDropdown(
-                            id = 'dropdown_tab2',
-                              options = list(list(label = "Listel Canada Ltd", value = "Listel Canada Ltd"),
-                                             list(label = "something else", value = "something else"))
-                          ),
-                          # ]]
                           dashDataTable(
                             id = "table",
                             page_size = 10,
                             data = df_to_list(coi_data),
-                            columns = lapply(colnames(coi_data),
+                            columns = lapply(table_columns,
                                              function(colName){
                                                list(
                                                  id = colName,
@@ -135,14 +133,10 @@ app$layout(
 
 app$callback(
   list(output('table', 'data')),
-  list(input('dropdown_tab2', 'value')),
+  list(input('input_bname', 'value')),
   function(input_value) {
-    print(input_value)
-    # selected_PID <- 87132494
     selected_PID <- combined_data %>% filter(BusinessName == input_value) %>% select("PID") %>% unique()
-    # columns <- c("CCID", "PID", "NAME", "LEVEL") %>% purrr::map(function(col) list(name = col, id = col))
-    # data <- df_to_list(coi_data)
-    data <- df_to_list(coi_data %>% filter(PID == 87132494)) #%>% select(unlist(cols)))
+    data <- df_to_list(coi_data %>% filter(PID == selected_PID[[1]] & LEVEL > 0) %>% arrange(LEVEL))
     list(data)
   }
 )
