@@ -52,8 +52,9 @@ app$layout(
               #             searchable = FALSE # TODO: test this out for speed
               dccInput(
                 id = "input_bname",
+                value = "Listel Canada Ltd"
                 # value = "Gyoza Bar Ltd"
-                value = "Gyoza Bar Ltd"
+                # value = "VLC Leaseholds Ltd"
               ),
               htmlBr(),
               dbcLabel("Address:"),
@@ -111,7 +112,7 @@ app$layout(
                                                  id = colName,
                                                  name = colName
                             )
-                            }),
+                            })
                           )
                         )
                       )
@@ -131,12 +132,32 @@ app$layout(
 
 # update table based on selection
 
+# app$callback(
+#   list(output('table', 'data')),
+#   list(input('input_bname', 'value')),
+#   function(input_value) {
+#     selected_PID <- combined_data %>% filter(BusinessName == input_value) %>% select("PID") %>% unique()
+#     data <- df_to_list(coi_data %>% filter(PID == selected_PID[[1]] & LEVEL > 0) %>% arrange(LEVEL))
+#     list(data)
+#   }
+# )
+
 app$callback(
-  list(output('table', 'data')),
-  list(input('input_bname', 'value')),
+  list(output("table", "data")),
+  list(input("input_bname", "value")),
   function(input_value) {
-    selected_PID <- combined_data %>% filter(BusinessName == input_value) %>% select("PID") %>% unique()
-    data <- df_to_list(coi_data %>% filter(PID == selected_PID[[1]] & LEVEL > 0) %>% arrange(LEVEL))
+    if (combined_data %>% filter(BusinessName == input_value) %>% select("PID") %>% is_null()) {
+      print('loop 1')
+      data <- list("No related companies found.")
+    }
+    else {
+      selected_PID <- combined_data %>%
+        filter(BusinessName == input_value) %>%
+        select("PID") %>%
+        unique()
+      data <- df_to_list(coi_data %>% filter(PID == selected_PID[[1]] & LEVEL > 0) %>% arrange(LEVEL))
+    }
+    print('loop 2')
     list(data)
   }
 )
