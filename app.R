@@ -16,7 +16,7 @@ devtools::load_all(".")
 combined_data <- read.csv(here("data-processed/combined_data.csv"), fileEncoding="latin1")
 coi_data <- read.csv(here("data-processed/filtered_hierarchy_data.csv"), fileEncoding="latin1") %>%
   rename("COUNTRY_OF_CONTROL" = "CCTL")
-table_columns <- c("LEVEL", "NAME", "CCID", "PID", "COUNTRY_OF_CONTROL")
+table_columns <- c("LEVEL", "NAME", "COUNTRY_OF_CONTROL")
 
 
 # Load CSS Styles
@@ -52,9 +52,9 @@ app$layout(
               #             searchable = FALSE # TODO: test this out for speed
               dccInput(
                 id = "input_bname",
-                value = "Listel Canada Ltd"
-                # value = "Gyoza Bar Ltd"
-                # value = "VLC Leaseholds Ltd"
+                value = "Listel Canada Ltd"         # for testing
+                # value = "Gyoza Bar Ltd"           # for testing
+                # value = "VLC Leaseholds Ltd"      # for testing
               ),
               htmlBr(),
               dbcLabel("Address:"),
@@ -101,9 +101,11 @@ app$layout(
                         list(
                           dbcCardBody(
                             dbcLabel('Inter-corporate relationships:')
-                          ),
+                          ))),
+                        dbcCard(
+                          list(
                           dashDataTable(
-                            id = "table",
+                            id = "related_co_table",
                             page_size = 10,
                             data = df_to_list(coi_data),
                             columns = lapply(table_columns,
@@ -130,25 +132,14 @@ app$layout(
   )
 )
 
-# update table based on selection
-
-# app$callback(
-#   list(output('table', 'data')),
-#   list(input('input_bname', 'value')),
-#   function(input_value) {
-#     selected_PID <- combined_data %>% filter(BusinessName == input_value) %>% select("PID") %>% unique()
-#     data <- df_to_list(coi_data %>% filter(PID == selected_PID[[1]] & LEVEL > 0) %>% arrange(LEVEL))
-#     list(data)
-#   }
-# )
-
+# update related companies table on "Business Details" tab
 app$callback(
-  list(output("table", "data")),
+  list(output("related_co_table", "data")),
   list(input("input_bname", "value")),
   function(input_value) {
-    if (combined_data %>% filter(BusinessName == input_value) %>% select("PID") %>% is_null()) {
-      print('loop 1')
-      data <- list("No related companies found.")
+    if (combined_data %>% filter(BusinessName == input_value) %>% select("PID") %>% unique() %>% nrow() < 1) {
+      # if no related companies found, return empty list.
+      data <- list()
     }
     else {
       selected_PID <- combined_data %>%
@@ -157,12 +148,11 @@ app$callback(
         unique()
       data <- df_to_list(coi_data %>% filter(PID == selected_PID[[1]] & LEVEL > 0) %>% arrange(LEVEL))
     }
-    print('loop 2')
     list(data)
   }
 )
 
-
+# update network plot on "License History" tab
 app$callback(
   output("network_plot", "srcDoc"),
   list(
