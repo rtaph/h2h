@@ -100,9 +100,13 @@ app$layout(
                     list(
                       dbcCard(
                         list(
-                          dbcCardBody(
-                            dbcLabel('Inter-corporate relationships')
-                          ),#)),
+                          dbcCardHeader('Business Summary'),
+                          dbcCardBody(list())
+                        )
+                      ),
+                      dbcCard(
+                        list(
+                          dbcCardHeader('Inter-corporate Relationships'),
                           dbcCardBody(
                             list(
                             dashDataTable(
@@ -116,17 +120,21 @@ app$layout(
                                                    name = colName
                               )
                               }),
-                              style_cell_conditional = css$rc_tbl_colw))
+                              fixed_columns = list(headers = TRUE),
+                              style_cell_conditional = css$rc_tbl_colw,
+                              style_as_list_view = TRUE,
+                              style_header = css$rc_tbl_hrow,
+                              css = list(
+                                  list(
+                                    selector = '.dash-cell div.dash-cell-value',
+                                    rule = 'display: inline; white-space: inherit; overflow: inherit; text-overflow: inherit;'
+                                  )
+                                )))
                             # style_data = list(
                             #   whiteSpace = "normal"
                             # ),
-                            # css = list(
-                            #   list(
-                            #     selector = '.dash-cell div.dash-cell-value',
-                            #     rule = 'display: inline; white-space: inherit; overflow: inherit; text-overflow: inherit;'
-                            #   )
-                            # ),
-                            # style = css$noborder
+                            # ,
+
                           )
                         )
                       )
