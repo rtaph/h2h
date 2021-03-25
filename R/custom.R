@@ -52,6 +52,18 @@ custom_css <- function() {
     "margin-right" = "5px"
   )
 
+  # related companies table: relative column widths
+  css$rc_tbl_colw <- list(
+    list(
+      "if" = list("column_id" = "NAME"),
+      width = "60%"
+    ),
+    list(
+      "if" = list("column_id" = "LEVEL"),
+      width = "20%"
+    )
+  )
+
   # Return CSS
   css
 }

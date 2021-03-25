@@ -8,6 +8,7 @@ library(dplyr)
 library(purrr)
 library(stringr)
 library(devtools)
+library(here)
 
 
 
@@ -16,7 +17,7 @@ devtools::load_all(".")
 combined_data <- read.csv(here("data-processed/combined_data.csv"), fileEncoding="latin1")
 coi_data <- read.csv(here("data-processed/filtered_hierarchy_data.csv"), fileEncoding="latin1") %>%
   rename("COUNTRY_OF_CONTROL" = "CCTL")
-table_columns <- c("LEVEL", "NAME", "COUNTRY_OF_CONTROL")
+table_columns <- c("NAME", "LEVEL", "COUNTRY_OF_CONTROL")
 
 
 # Load CSS Styles
@@ -100,21 +101,32 @@ app$layout(
                       dbcCard(
                         list(
                           dbcCardBody(
-                            dbcLabel('Inter-corporate relationships:')
-                          ))),
-                        dbcCard(
-                          list(
-                          dashDataTable(
-                            id = "related_co_table",
-                            page_size = 10,
-                            data = df_to_list(coi_data),
-                            columns = lapply(table_columns,
-                                             function(colName){
-                                               list(
-                                                 id = colName,
-                                                 name = colName
-                            )
-                            })
+                            dbcLabel('Inter-corporate relationships')
+                          ),#)),
+                          dbcCardBody(
+                            list(
+                            dashDataTable(
+                              id = "related_co_table",
+                              page_size = 10,
+                              data = df_to_list(coi_data),
+                              columns = lapply(table_columns,
+                                               function(colName){
+                                                 list(
+                                                   id = colName,
+                                                   name = colName
+                              )
+                              }),
+                              style_cell_conditional = css$rc_tbl_colw))
+                            # style_data = list(
+                            #   whiteSpace = "normal"
+                            # ),
+                            # css = list(
+                            #   list(
+                            #     selector = '.dash-cell div.dash-cell-value',
+                            #     rule = 'display: inline; white-space: inherit; overflow: inherit; text-overflow: inherit;'
+                            #   )
+                            # ),
+                            # style = css$noborder
                           )
                         )
                       )
