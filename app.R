@@ -3,13 +3,22 @@ library(dash)
 library(dashHtmlComponents)
 library(dashCoreComponents)
 library(dashBootstrapComponents)
+library(dashTable)
 library(dplyr)
 library(purrr)
 library(stringr)
 library(devtools)
+library(here)
+
+
 
 # Load custom functions and data
 devtools::load_all(".")
+combined_data <- read.csv(here("data-processed/combined_data.csv"), fileEncoding="latin1")
+coi_data <- read.csv(here("data-processed/filtered_hierarchy_data.csv"), fileEncoding="latin1") %>%
+  rename("COUNTRY_OF_CONTROL" = "CCTL")
+table_columns <- c("NAME", "LEVEL", "COUNTRY_OF_CONTROL")
+
 
 # Load CSS Styles
 css <- custom_css()
@@ -42,10 +51,11 @@ app$layout(
               #             value = "Gyoza Bar Ltd",
               #             clearable = TRUE,
               #             searchable = FALSE # TODO: test this out for speed
-              # ),
               dccInput(
                 id = "input_bname",
-                value = "Gyoza Bar Ltd"
+                value = "Listel Canada Ltd"         # for testing
+                # value = "Gyoza Bar Ltd"           # for testing
+                # value = "VLC Leaseholds Ltd"      # for testing
               ),
               htmlBr(),
               dbcLabel("Address:"),
@@ -90,7 +100,42 @@ app$layout(
                     list(
                       dbcCard(
                         list(
-                          dbcCardBody()
+                          dbcCardHeader('Business Summary'),
+                          dbcCardBody(list())
+                        )
+                      ),
+                      dbcCard(
+                        list(
+                          dbcCardHeader('Inter-corporate Relationships'),
+                          dbcCardBody(
+                            list(
+                            dashDataTable(
+                              id = "related_co_table",
+                              page_size = 10,
+                              data = df_to_list(coi_data),
+                              columns = lapply(table_columns,
+                                               function(colName){
+                                                 list(
+                                                   id = colName,
+                                                   name = colName
+                              )
+                              }),
+                              fixed_columns = list(headers = TRUE),
+                              style_cell_conditional = css$rc_tbl_colw,
+                              style_as_list_view = TRUE,
+                              style_header = css$rc_tbl_hrow,
+                              css = list(
+                                  list(
+                                    selector = '.dash-cell div.dash-cell-value',
+                                    rule = 'display: inline; white-space: inherit; overflow: inherit; text-overflow: inherit;'
+                                  )
+                                )))
+                            # style_data = list(
+                            #   whiteSpace = "normal"
+                            # ),
+                            # ,
+
+                          )
                         )
                       )
                     )
@@ -107,6 +152,27 @@ app$layout(
   )
 )
 
+# update related companies table on "Business Details" tab
+app$callback(
+  list(output("related_co_table", "data")),
+  list(input("input_bname", "value")),
+  function(input_value) {
+    if (combined_data %>% filter(BusinessName == input_value) %>% select("PID") %>% unique() %>% nrow() < 1) {
+      # if no related companies found, return empty list.
+      data <- list()
+    }
+    else {
+      selected_PID <- combined_data %>%
+        filter(BusinessName == input_value) %>%
+        select("PID") %>%
+        unique()
+      data <- df_to_list(coi_data %>% filter(PID == selected_PID[[1]] & LEVEL > 0) %>% arrange(LEVEL))
+    }
+    list(data)
+  }
+)
+
+# update network plot on "License History" tab
 app$callback(
   output("network_plot", "srcDoc"),
   list(

@@ -6,6 +6,22 @@ Authors@R:
            family = "Pilliard-Hellwig",
            role = c("aut", "cre"),
            email = "rafael.taph@gmail.com")
+    person(given = "Selma",
+           family = "Duric",
+           role = c("aut", "cre"),
+           email = "selmaduric@gmail.com")
+    person(given = "Debananda",
+           family = "Sarkar",
+           role = c("aut", "cre"),
+           email = "sarkar.debananda.1@gmail.com")
+    person(given = "Tanmay",
+           family = "Sharma",
+           role = c("aut", "cre"),
+           email = "tanmaysharma19@gmail.com")
+    person(given = "Zeliha",
+           family = "Ural Merpez",
+           role = c("aut", "cre"),
+           email = "zural@student.ubc.ca")
 Description: A dashboard to visualize the City of Vancouver's business licenses and assess anomalies.
 License: MIT + file LICENSE
 Encoding: UTF-8
