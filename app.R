@@ -74,8 +74,8 @@ app$layout(
                         list(
                           dbcAlert(
                             #is_open = risk_score(bname) > 2,
-                            id = "card_score",
-                            color = "light"),
+                            id = "card_score"
+                          ),
                           dbcCardBody(
                             htmlDiv(id = "network_div", children = list(
                               htmlIframe(
@@ -189,7 +189,10 @@ app$callback(
 )
 
 app$callback(
-  output("card_score", "children"),
+  list(
+    output("card_score", "children"),
+    output("card_score", "color")
+  ),
   list(
     input("input_bname", "value")
   ),
@@ -200,6 +203,10 @@ app$callback(
     lev <- case_when(r <= 1 ~ "low risk",
                      r <= 3 ~ "medium risk",
                      TRUE ~ "high risk")
+    
+    color_back <- case_when(r <= 1 ~ "green",
+                     r <= 3 ~ "yellow",
+                     TRUE ~ "red")
 
     msg <- c()
     msg[1] <- if_else(pr$missingdata, "has a lot of missing data", NA_character_)
@@ -208,7 +215,7 @@ app$callback(
     msg[4] <- if_else(pr$status, "is inactive or shut", NA_character_)
     msg <- glue::glue_collapse(na.omit(msg), sep = ", ", last = " and ")
 
-    str_glue("Risk Score: {r} / 4 ({lev}). This business {msg}.")
+    list(str_glue("Risk Score: {r} / 4 ({lev}). This business {msg}."), color_back)
     })
 )
 
