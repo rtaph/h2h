@@ -7,7 +7,7 @@
 # Usage:
 # make all
 
-all : data/g.rda
+all : data/g.rda data-processed/filtered_hierarchy_data.csv
 
 data-raw/license_data.csv : src/get_license_data.py
 	python src/get_license_data.py --target_file=data-raw/license_data.csv
