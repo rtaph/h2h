@@ -58,16 +58,19 @@ custom_css <- function() {
     "if" = list("column_id" = "NAME"),
     width = "60%",
     textAlign = "left"
-  ),
-  list(
-    "if" = list("column_id" = "LEVEL"),
-    width = "20%"
+    ),
+    list(
+      "if" = list("column_id" = "LEVEL"),
+      width = "20%"
+    )
   )
-)
-# related companies table: header row styling
+  # related companies table: header row styling
   css$rc_tbl_hrow <- list(
     backgroundColor = "white"
   )
+
+  # related companies table: style fonts
+  css$rc_tbl_fonts <- list('fontSize' = 12, 'font-family' = 'sans-serif')
 
   # Return CSS
   css
