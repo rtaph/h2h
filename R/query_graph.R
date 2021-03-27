@@ -11,6 +11,7 @@
 #' @return
 #' @export
 #' @importFrom igraph make_ego_graph
+#' @import igraph
 #'
 #' @examples
 #' network <- get_ego(qp = "B7")
