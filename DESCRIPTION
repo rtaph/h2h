@@ -30,7 +30,7 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Imports: 
     dash,
-    dashBootstrapComponents (>= 0.11.1),
+    dashBootstrapComponents (>= 0.11.3),
     dashCoreComponents,
     dashHtmlComponents,
     devtools,
@@ -39,7 +39,7 @@ Imports:
     igraph,
     memoise,
     purrr,
-    readr,
+    readr (>= 1.4.0),
     stringdist,
     stringr,
     tibble,
