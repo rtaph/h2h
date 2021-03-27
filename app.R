@@ -101,9 +101,13 @@ app$layout(
                       dbcCard(
                         list(
                           dbcCardHeader('Business Summary'),
-                          dbcCardBody(list())
+                          dbcCardBody(list(
+                            dashDataTable(
+                              id = 'co-type'
+                            )
+                          )
                         )
-                      ),
+                      )),
                       dbcCard(
                         list(
                           dbcCardHeader('Inter-corporate Relationships'),
@@ -123,6 +127,7 @@ app$layout(
                               fixed_columns = list(headers = TRUE),
                               style_cell_conditional = css$rc_tbl_colw,
                               style_as_list_view = TRUE,
+                              style_cell = css$rc_tbl_fonts,
                               style_header = css$rc_tbl_hrow,
                               css = list(
                                   list(
@@ -157,7 +162,10 @@ app$callback(
   list(output("related_co_table", "data")),
   list(input("input_bname", "value")),
   function(input_value) {
-    if (combined_data %>% filter(BusinessName == input_value) %>% select("PID") %>% unique() %>% nrow() < 1) {
+    if (combined_data %>%
+      filter(BusinessName == input_value) %>%
+      select("PID") %>%
+      unique() %>% nrow() < 1) {
       # if no related companies found, return empty list.
       data <- list()
     }
@@ -166,11 +174,34 @@ app$callback(
         filter(BusinessName == input_value) %>%
         select("PID") %>%
         unique()
-      data <- df_to_list(coi_data %>% filter(PID == selected_PID[[1]] & LEVEL > 0) %>% arrange(LEVEL))
+      data <- df_to_list(coi_data %>%
+        filter(PID == selected_PID[[1]] & LEVEL > 0) %>%
+        arrange(LEVEL))
     }
     list(data)
   }
 )
+
+# update business summary on "Business Details" tab
+app$callback(
+  list(output("co-type", "data"),
+       output("co-type", "columns")),
+  list(input("input_bname", "value")),
+  function(input_value) {
+    data <- combined_data %>%
+      filter((BusinessName == input_value) & (FOLDERYEAR <= format(Sys.Date(), "%y"))) %>%
+      filter(FOLDERYEAR == max(FOLDERYEAR)) %>%
+      arrange(desc(FOLDERYEAR)) %>%
+      top_n(n = 1, wt = FOLDERYEAR) %>%
+      select(BusinessType) %>%
+      unique %>%
+      df_to_list()
+    columns <- c("BusinessType") %>% purrr::map(function(col) list(name = col, id = col))
+    list(data, columns)
+})
+
+
+
 
 # update network plot on "License History" tab
 app$callback(
