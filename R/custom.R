@@ -69,8 +69,8 @@ custom_css <- function() {
     backgroundColor = "white"
   )
 
-  # related companies table: style fonts
-  css$rc_tbl_fonts <- list('fontSize' = 12, 'font-family' = 'sans-serif')
+  # tab 2 tables: style fonts
+  css$tbl_fonts <- list('fontSize' = 12, 'font-family' = 'sans-serif')
 
   # Return CSS
   css

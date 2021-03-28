@@ -23,8 +23,8 @@ table_columns <- c("NAME", "LEVEL", "COUNTRY_OF_CONTROL")
 # Load CSS Styles
 css <- custom_css()
 
-# bnames <- as.character(unique(forcats::fct_c(h2h::vbr$BusinessName,
-#                   h2h::vbr$BusinessTradeName)))
+# bnames <- as.character(unique(forcats::fct_c(h2h::combined_data$BusinessName,
+#                   h2h::combined_data$BusinessTradeName)))
 # bnames <- bnames[!is.na(bnames) & !bnames == ""]
 # bnames <- c(head(bnames, 20))
 
@@ -53,7 +53,8 @@ app$layout(
               #             searchable = FALSE # TODO: test this out for speed
               dccInput(
                 id = "input_bname",
-                value = "Listel Canada Ltd"         # for testing
+                # value = "Listel Canada Ltd"         # for testing
+                value = "Westfair Foods Ltd"
                 # value = "Gyoza Bar Ltd"           # for testing
                 # value = "VLC Leaseholds Ltd"      # for testing
               ),
@@ -102,12 +103,23 @@ app$layout(
                         list(
                           dbcCardHeader('Business Summary'),
                           dbcCardBody(list(
+                            # Business Type Table
                             dashDataTable(
-                              id = 'co-type'
+                              id = 'co-type',
+                              style_cell = css$tbl_fonts
                             )
                           )
                         )
                       )),
+                      dbcCard(
+                        list(
+                          dbcCardHeader("Company Size"),
+                          dbcCardBody(list(
+                            dccGraph(id = "num_emp_plot")
+                          ))
+                        )
+                      ),
+
                       dbcCard(
                         list(
                           dbcCardHeader('Inter-corporate Relationships'),
@@ -127,7 +139,7 @@ app$layout(
                               fixed_columns = list(headers = TRUE),
                               style_cell_conditional = css$rc_tbl_colw,
                               style_as_list_view = TRUE,
-                              style_cell = css$rc_tbl_fonts,
+                              style_cell = css$tbl_fonts,
                               style_header = css$rc_tbl_hrow,
                               css = list(
                                   list(
@@ -188,9 +200,9 @@ app$callback(
        output("co-type", "columns")),
   list(input("input_bname", "value")),
   function(input_value) {
+    # combined_data$FOLDERYEAR = factor(combined_data$FOLDERYEAR, ordered = TRUE) #%>% relevel, c(94, 96, 97, 98, 99, 1))
     data <- combined_data %>%
-      filter((BusinessName == input_value) & (FOLDERYEAR <= format(Sys.Date(), "%y"))) %>%
-      filter(FOLDERYEAR == max(FOLDERYEAR)) %>%
+      filter((BusinessName == input_value)) %>%   ## NOTE: to add if/else condition to use years 94-99
       arrange(desc(FOLDERYEAR)) %>%
       top_n(n = 1, wt = FOLDERYEAR) %>%
       select(BusinessType) %>%
@@ -200,7 +212,32 @@ app$callback(
     list(data, columns)
 })
 
+# plot number of employees for industry
+#
+# num_emp_industry <- combined_data %>%
+#   filter((BusinessName == input_value) & (FOLDERYEAR <= format(Sys.Date(), "%y"))) %>%
+#   filter(FOLDERYEAR == max(FOLDERYEAR)) %>%
+#   arrange(desc(FOLDERYEAR)) %>%
+#   top_n(n = 1, wt = FOLDERYEAR) %>%
+#   select(NumberofEmployees)
 
+app$callback(
+  output("num_emp_plot", "figure"),
+  list(input("input_bname", "value")),
+  function(input_value) {
+    emp_plot <- combined_data %>%
+      filter((BusinessName == input_value) & (FOLDERYEAR <= format(Sys.Date(), "%y"))) %>%
+    ggplot2::ggplot(ggplot2::aes(
+      x = FOLDERYEAR,
+      y = NumberofEmployees
+    )) + ggplot2::geom_bar(stat = 'identity') +
+      ggplot2::labs(title = 'Number of Employees Reported',
+                    x = "Year (from 2000 to current)",
+                    y = "Number of Employees") +
+      ggplot2::scale_x_discrete(breaks = seq(1, format(Sys.Date(), "%y"), by = 1))
+    plotly::ggplotly(emp_plot, tooltip=FALSE)
+  }
+)
 
 
 # update network plot on "License History" tab
