@@ -212,30 +212,37 @@ app$callback(
     list(data, columns)
 })
 
-# plot number of employees for industry
-#
-# num_emp_industry <- combined_data %>%
-#   filter((BusinessName == input_value) & (FOLDERYEAR <= format(Sys.Date(), "%y"))) %>%
-#   filter(FOLDERYEAR == max(FOLDERYEAR)) %>%
-#   arrange(desc(FOLDERYEAR)) %>%
-#   top_n(n = 1, wt = FOLDERYEAR) %>%
-#   select(NumberofEmployees)
-
+# plot number of employees for industry on "Business Details" tab
 app$callback(
   output("num_emp_plot", "figure"),
   list(input("input_bname", "value")),
   function(input_value) {
     emp_plot <- combined_data %>%
-      filter((BusinessName == input_value) & (FOLDERYEAR <= format(Sys.Date(), "%y"))) %>%
-    ggplot2::ggplot(ggplot2::aes(
-      x = FOLDERYEAR,
-      y = NumberofEmployees
-    )) + ggplot2::geom_bar(stat = 'identity') +
-      ggplot2::labs(title = 'Number of Employees Reported',
-                    x = "Year (from 2000 to current)",
-                    y = "Number of Employees") +
-      ggplot2::scale_x_discrete(breaks = seq(1, format(Sys.Date(), "%y"), by = 1))
-    plotly::ggplotly(emp_plot, tooltip=FALSE)
+      filter((BusinessName == input_value) & (FOLDERYEAR <= format(Sys.Date(), "%y")))
+    if (nrow(emp_plot) < 1) {
+      emp_plot <- ggplot2::ggplot() +
+      ggplot2::geom_text() +
+      ggplot2::theme_void() +
+        ggplot2::annotate("text", label = "No data available.", x = 2, y = 15, size = 8) +
+        ggplot2::theme(
+          panel.grid.major = ggplot2::element_blank(),
+          panel.grid.minor = ggplot2::element_blank()
+        )
+    }
+    else {
+      emp_plot <- emp_plot %>% ggplot2::ggplot(ggplot2::aes(
+        x = FOLDERYEAR,
+        y = NumberofEmployees
+      )) +
+        ggplot2::geom_bar(stat = "identity") +
+        ggplot2::labs(
+          title = "Number of Employees Reported",
+          x = "Year (from 2000 to current)",
+          y = "Number of Employees"
+        ) +
+        ggplot2::scale_x_continuous(breaks = seq(1, format(Sys.Date(), "%y"), by = 1))
+    }
+    plotly::ggplotly(emp_plot, tooltip = FALSE)
   }
 )
 
