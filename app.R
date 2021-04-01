@@ -99,6 +99,7 @@ app$layout(
                 dccTab(label = "Business Details", children = list(
                   htmlDiv(
                     list(
+                      htmlDiv(list(
                       dbcCard(
                         list(
                           dbcCardHeader('Business Summary'),
@@ -110,7 +111,8 @@ app$layout(
                             )
                           )
                         )
-                      )),
+                      ))), style=list('display' = 'inline-block', 'width' = '50%')),
+                      htmlDiv(list(
                       dbcCard(
                         list(
                           dbcCardHeader("Company Size"),
@@ -118,8 +120,9 @@ app$layout(
                             dccGraph(id = "num_emp_plot")
                           ))
                         )
-                      ),
-
+                      )
+                      ), style=list('display' = 'inline-block', 'width' = '50%')),
+                    htmlDiv(list(
                       dbcCard(
                         list(
                           dbcCardHeader('Inter-corporate Relationships'),
@@ -147,15 +150,10 @@ app$layout(
                                     rule = 'display: inline; white-space: inherit; overflow: inherit; text-overflow: inherit;'
                                   )
                                 )))
-                            # style_data = list(
-                            #   whiteSpace = "normal"
-                            # ),
-                            # ,
-
                           )
                         )
                       )
-                    )
+                    ))),
                   )
                 ))
               ))
@@ -236,7 +234,7 @@ app$callback(
       )) +
         ggplot2::geom_bar(stat = "identity") +
         ggplot2::labs(
-          title = "Number of Employees Reported",
+          title = "# of Employees Reported",
           x = "Year (from 2000 to current)",
           y = "Number of Employees"
         ) +
