@@ -216,17 +216,22 @@ app$callback(
   list(input("input_bname", "value")),
   function(input_value) {
     emp_plot <- combined_data %>%
-      filter((BusinessName == input_value) & (FOLDERYEAR <= format(Sys.Date(), "%y")))
+      mutate(FOLDERYEAR = formatC(combined_data$FOLDERYEAR, width=2, format='d', flag='0')) %>%
+      filter((BusinessName == input_value) & (FOLDERYEAR <= format(Sys.Date(), "%y"))) %>%
+      group_by(FOLDERYEAR, LicenceNumber) %>%
+      summarise(NumberofEmployees = mean(NumberofEmployees))
+    # if no data available
     if (nrow(emp_plot) < 1) {
       emp_plot <- ggplot2::ggplot() +
-      ggplot2::geom_text() +
-      ggplot2::theme_void() +
+        ggplot2::geom_text() +
+        ggplot2::theme_void() +
         ggplot2::annotate("text", label = "No data available.", x = 2, y = 15, size = 8) +
         ggplot2::theme(
           panel.grid.major = ggplot2::element_blank(),
           panel.grid.minor = ggplot2::element_blank()
         )
     }
+    # if data available
     else {
       emp_plot <- emp_plot %>% ggplot2::ggplot(ggplot2::aes(
         x = FOLDERYEAR,
@@ -238,7 +243,8 @@ app$callback(
           x = "Year (from 2000 to current)",
           y = "Number of Employees"
         ) +
-        ggplot2::scale_x_continuous(breaks = seq(1, format(Sys.Date(), "%y"), by = 1))
+        ggplot2::scale_x_discrete(labels = function(x) paste0("20", x), drop=FALSE) +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90))
     }
     plotly::ggplotly(emp_plot, tooltip = FALSE)
   }
