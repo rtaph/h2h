@@ -14,7 +14,7 @@ library(here)
 
 # Load custom functions and data
 devtools::load_all(".")
-combined_data <- read.csv(here("data-processed/combined_data.csv"), fileEncoding="latin1")
+
 coi_data <- read.csv(here("data-processed/filtered_hierarchy_data.csv"), fileEncoding="latin1") %>%
   rename("COUNTRY_OF_CONTROL" = "CCTL")
 table_columns <- c("NAME", "LEVEL", "COUNTRY_OF_CONTROL")
@@ -172,7 +172,7 @@ app$callback(
   list(output("related_co_table", "data")),
   list(input("input_bname", "value")),
   function(input_value) {
-    if (combined_data %>%
+    if (vbr %>%
       filter(BusinessName == input_value) %>%
       select("PID") %>%
       unique() %>% nrow() < 1) {
@@ -180,7 +180,7 @@ app$callback(
       data <- list()
     }
     else {
-      selected_PID <- combined_data %>%
+      selected_PID <- vbr %>%
         filter(BusinessName == input_value) %>%
         select("PID") %>%
         unique()
@@ -199,7 +199,7 @@ app$callback(
   list(input("input_bname", "value")),
   function(input_value) {
     # combined_data$FOLDERYEAR = factor(combined_data$FOLDERYEAR, ordered = TRUE) #%>% relevel, c(94, 96, 97, 98, 99, 1))
-    data <- combined_data %>%
+    data <- vbr %>%
       filter((BusinessName == input_value)) %>%   ## NOTE: to add if/else condition to use years 94-99
       arrange(desc(FOLDERYEAR)) %>%
       top_n(n = 1, wt = FOLDERYEAR) %>%
@@ -215,8 +215,8 @@ app$callback(
   output("num_emp_plot", "figure"),
   list(input("input_bname", "value")),
   function(input_value) {
-    emp_plot <- combined_data %>%
-      mutate(FOLDERYEAR = formatC(combined_data$FOLDERYEAR, width=2, format='d', flag='0')) %>%
+    emp_plot <- vbr %>%
+      mutate(FOLDERYEAR = formatC(vbr$FOLDERYEAR, width=2, format='d', flag='0')) %>%
       filter((BusinessName == input_value) & (FOLDERYEAR <= format(Sys.Date(), "%y"))) %>%
       group_by(FOLDERYEAR, LicenceNumber) %>%
       summarise(NumberofEmployees = mean(NumberofEmployees))
