@@ -15,7 +15,7 @@ library(here)
 # Load custom functions and data
 devtools::load_all(".")
 
-coi_data <- read.csv(here("data-processed/filtered_hierarchy_data.csv"), fileEncoding="latin1") %>%
+coi_data <- arrow::read_feather(here("data-processed/filtered_hierarchy_data.feather")) %>%
   rename("COUNTRY_OF_CONTROL" = "CCTL")
 table_columns <- c("NAME", "LEVEL", "COUNTRY_OF_CONTROL")
 
