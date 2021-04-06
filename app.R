@@ -18,8 +18,8 @@ devtools::load_all(".")
 coi_data <- arrow::read_feather(here("data-processed/filtered_hierarchy_data.feather")) %>%
   rename("COUNTRY_OF_CONTROL" = "CCTL")
 table_columns <- c("NAME", "LEVEL", "COUNTRY_OF_CONTROL")
-
-
+tbl_col_ids <- c("NAME", "LEVEL", "COUNTRY_OF_CONTROL")
+tbl_col_names <- c("Name", "Level", "Country of Control")
 # Load CSS Styles
 css <- custom_css()
 
@@ -107,11 +107,13 @@ app$layout(
                             # Business Type Table
                             dashDataTable(
                               id = 'co-type',
-                              style_cell = css$tbl_fonts
+                              page_size = 10,
+                              style_cell = css$tbl_fonts,
+                              style_header = css$tbl_hrow
                             )
                           )
                         )
-                      ))), style=list('display' = 'inline-block', 'width' = '50%')),
+                      ))), style=css$horiz_split),
                       htmlDiv(list(
                       dbcCard(
                         list(
@@ -121,7 +123,7 @@ app$layout(
                           ))
                         )
                       )
-                      ), style=list('display' = 'inline-block', 'width' = '50%')),
+                      ), style=css$horiz_split),
                     htmlDiv(list(
                       dbcCard(
                         list(
@@ -132,18 +134,12 @@ app$layout(
                               id = "related_co_table",
                               page_size = 10,
                               data = df_to_list(coi_data),
-                              columns = lapply(table_columns,
-                                               function(colName){
-                                                 list(
-                                                   id = colName,
-                                                   name = colName
-                              )
-                              }),
+                              columns = map2(tbl_col_ids, tbl_col_names, function(col, col2) list(id = col, name = col2)),
                               fixed_columns = list(headers = TRUE),
                               style_cell_conditional = css$rc_tbl_colw,
                               style_as_list_view = TRUE,
                               style_cell = css$tbl_fonts,
-                              style_header = css$rc_tbl_hrow,
+                              style_header = css$tbl_hrow,
                               css = list(
                                   list(
                                     selector = '.dash-cell div.dash-cell-value',
@@ -233,20 +229,23 @@ app$callback(
     }
     # if data available
     else {
+      totals <- emp_plot %>% group_by(FOLDERYEAR) %>% summarise(total = sum(NumberofEmployees))
       emp_plot <- emp_plot %>% ggplot2::ggplot(ggplot2::aes(
         x = FOLDERYEAR,
         y = NumberofEmployees
       )) +
-        ggplot2::geom_bar(stat = "identity") +
+        ggplot2::geom_bar(position='stack', stat='identity', fill="royalblue4") +
         ggplot2::labs(
           title = "# of Employees Reported",
           x = "Year (from 2000 to current)",
           y = "Number of Employees"
         ) +
         ggplot2::scale_x_discrete(labels = function(x) paste0("20", x), drop=FALSE) +
-        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90))
+        ggplot2::theme_bw() +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90), panel.background = ggplot2::element_rect(fill = 'white'),
+                       panel.grid.minor = ggplot2::element_blank(), panel.grid.major.x = ggplot2::element_blank())
     }
-    plotly::ggplotly(emp_plot, tooltip = FALSE)
+    plotly::ggplotly(emp_plot, tooltip = FALSE')
   }
 )
 

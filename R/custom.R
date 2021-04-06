@@ -65,13 +65,16 @@ custom_css <- function() {
     )
   )
   # related companies table: header row styling
-  css$rc_tbl_hrow <- list(
-    backgroundColor = "white"
+  css$tbl_hrow <- list(
+    backgroundColor = "white",
+    fontWeight = 'bold'
   )
 
   # tab 2 tables: style fonts
   css$tbl_fonts <- list('fontSize' = 12, 'font-family' = 'sans-serif')
 
+  # tab 2 layout: share row 50/50 split
+  css$horiz_split <- list('display' = 'inline-block', 'width' = '50%')
   # Return CSS
   css
 }
