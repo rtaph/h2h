@@ -133,17 +133,14 @@ app$layout(
                               page_size = 10,
                               data = df_to_list(coi_data),
                               columns = map2(tbl_col_ids, tbl_col_names, function(col, col2) list(id = col, name = col2)),
-                              fixed_columns = list(headers = TRUE),
                               style_cell_conditional = css$rc_tbl_colw,
+                              fixed_columns = css$fixed_headers,
+                              css = css$tbl_ovrflw,
+                              style_data = css$ovrflow_ws,
                               style_as_list_view = TRUE,
-                              style_cell = css$tbl_fonts,
                               style_header = css$tbl_hrow,
-                              css = list(
-                                  list(
-                                    selector = '.dash-cell div.dash-cell-value',
-                                    rule = 'display: inline; white-space: inherit; overflow: inherit; text-overflow: inherit;'
-                                  )
-                                )))
+                              style_cell = css$tbl_fonts
+                            ))
                           )
                         )
                       )
