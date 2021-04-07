@@ -188,21 +188,23 @@ app$callback(
 
 # update business summary on "Business Details" tab
 app$callback(
-  list(output("co-type", "data"),
-       output("co-type", "columns")),
+  list(
+    output("co-type", "data"),
+    output("co-type", "columns")
+  ),
   list(input("input_bname", "value")),
   function(input_value) {
-    # combined_data$FOLDERYEAR = factor(combined_data$FOLDERYEAR, ordered = TRUE) #%>% relevel, c(94, 96, 97, 98, 99, 1))
     data <- vbr %>%
-      filter((BusinessName == input_value)) %>%   ## NOTE: to add if/else condition to use years 94-99
+      filter((BusinessName == input_value)) %>%
       arrange(desc(FOLDERYEAR)) %>%
       top_n(n = 1, wt = FOLDERYEAR) %>%
       select(BusinessType) %>%
-      unique %>%
+      unique() %>%
       df_to_list()
     columns <- c("BusinessType") %>% purrr::map(function(col) list(name = "Primary Business Type", id = col))
     list(data, columns)
-})
+  }
+)
 
 # plot number of employees for industry on "Business Details" tab
 app$callback(
@@ -236,11 +238,17 @@ app$callback(
         ggplot2::stat_summary(fun = "sum", geom = "bar", fill = "royalblue4") +
         ggplot2::labs(
           y = "Number of Employees Reported",
-          x = "Year (from 2000 to current)"
+          x = "Year"
         ) +
-        ggplot2::scale_x_discrete(labels = function(x) paste0("20", x),
-                                  drop = FALSE,
-                                  expand = c(0, 0)) +
+        ggplot2::scale_x_discrete(
+          labels = function(x) paste0("20", x),
+          drop = FALSE,
+          limits = factor(seq(
+            vbr %>% select(FOLDERYEAR) %>% min(),
+            format(Sys.Date(), "%y")
+          ))
+        ) +
+        ggplot2::scale_y_continuous(expand = c(0, 0.1)) +
         ggplot2::theme_bw() +
         ggplot2::theme(
           axis.text.x = ggplot2::element_text(angle = 90),
