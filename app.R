@@ -105,9 +105,12 @@ app$layout(
                             # Business Type Table
                             dashDataTable(
                               id = 'co-type',
+                              columns = list(label = "Primary Business Type", value = "PrimaryBusinessType"),
                               page_size = 10,
                               style_cell = css$tbl_fonts,
-                              style_header = css$tbl_hrow
+                              style_header = css$tbl_hrow,
+                              style_cell_conditional = css$bs_tbl_align,
+                              style_as_list_view = TRUE
                             )
                           )
                         )
@@ -197,7 +200,7 @@ app$callback(
       select(BusinessType) %>%
       unique %>%
       df_to_list()
-    columns <- c("BusinessType") %>% purrr::map(function(col) list(name = col, id = col))
+    columns <- c("BusinessType") %>% purrr::map(function(col) list(name = "Primary Business Type", id = col))
     list(data, columns)
 })
 
