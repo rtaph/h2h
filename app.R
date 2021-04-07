@@ -15,10 +15,8 @@ library(here)
 # Load custom functions and data
 devtools::load_all(".")
 
-coi_data <- arrow::read_feather(here("data-processed/filtered_hierarchy_data.feather")) %>%
-  rename("COUNTRY_OF_CONTROL" = "CCTL")
-table_columns <- c("NAME", "LEVEL", "COUNTRY_OF_CONTROL")
-tbl_col_ids <- c("NAME", "LEVEL", "COUNTRY_OF_CONTROL")
+coi_data <- arrow::read_feather(here("data-processed/filtered_hierarchy_data.feather"))
+tbl_col_ids <- c("NAME", "LEVEL", "CCTL")
 tbl_col_names <- c("Name", "Level", "Country of Control")
 # Load CSS Styles
 css <- custom_css()
@@ -212,12 +210,13 @@ app$callback(
   list(input("input_bname", "value")),
   function(input_value) {
     emp_plot <- vbr %>%
-      mutate(FOLDERYEAR = formatC(vbr$FOLDERYEAR, width=2, format='d', flag='0')) %>%
+      mutate(FOLDERYEAR = formatC(vbr$FOLDERYEAR, width = 2, format = "d", flag = "0")) %>%
       filter((BusinessName == input_value) & (FOLDERYEAR <= format(Sys.Date(), "%y"))) %>%
       group_by(FOLDERYEAR, LicenceNumber) %>%
       summarise(NumberofEmployees = mean(NumberofEmployees))
+
     # if no data available
-    if (nrow(emp_plot) < 1) {
+    if (emp_plot %>% tidyr::drop_na() %>% nrow() < 1) {
       emp_plot <- ggplot2::ggplot() +
         ggplot2::geom_text() +
         ggplot2::theme_void() +
@@ -226,26 +225,31 @@ app$callback(
           panel.grid.major = ggplot2::element_blank(),
           panel.grid.minor = ggplot2::element_blank()
         )
+      return(plotly::ggplotly(emp_plot))
     }
     # if data available
     else {
-      totals <- emp_plot %>% group_by(FOLDERYEAR) %>% summarise(total = sum(NumberofEmployees))
       emp_plot <- emp_plot %>% ggplot2::ggplot(ggplot2::aes(
         x = FOLDERYEAR,
         y = NumberofEmployees
       )) +
-        ggplot2::geom_bar(position='stack', stat='identity', fill="royalblue4") +
+        ggplot2::stat_summary(fun = "sum", geom = "bar", fill = "royalblue4") +
         ggplot2::labs(
-          title = "# of Employees Reported",
-          x = "Year (from 2000 to current)",
-          y = "Number of Employees"
+          y = "Number of Employees Reported",
+          x = "Year (from 2000 to current)"
         ) +
-        ggplot2::scale_x_discrete(labels = function(x) paste0("20", x), drop=FALSE) +
+        ggplot2::scale_x_discrete(labels = function(x) paste0("20", x),
+                                  drop = FALSE,
+                                  expand = c(0, 0)) +
         ggplot2::theme_bw() +
-        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90), panel.background = ggplot2::element_rect(fill = 'white'),
-                       panel.grid.minor = ggplot2::element_blank(), panel.grid.major.x = ggplot2::element_blank())
+        ggplot2::theme(
+          axis.text.x = ggplot2::element_text(angle = 90),
+          panel.background = ggplot2::element_rect(fill = "white"),
+          panel.grid.minor = ggplot2::element_blank(),
+          panel.grid.major.x = ggplot2::element_blank()
+        )
+      return(plotly::ggplotly(emp_plot, tooltip = "y"))
     }
-    plotly::ggplotly(emp_plot, tooltip = FALSE')
   }
 )
 
