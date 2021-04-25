@@ -6,7 +6,8 @@ library(stringr)
 
 
 
-#' Read-in the City-of-Vancouver Business License Data and Save to Package
+#' Read-in the combined City-of-Vancouver Business License &
+#' Statistics Canada Related Companies Data and Save to Package
 #'
 #' This package takes existing CSV files and saves the as .Rda after data
 #' cleaning.
@@ -26,7 +27,7 @@ library(stringr)
 #' \dontrun{
 #' data_vbr(save_to_pkg = FALSE)
 #' }
-data_vbr <- function(path = "data-raw/license_data.csv",
+data_vbr <- function(path = "data-processed/combined_data.csv",
                      save_to_pkg = TRUE) {
   colspec <- cols(
     .default = col_character(),
@@ -50,7 +51,9 @@ data_vbr <- function(path = "data-raw/license_data.csv",
     prov_cleaned = col_factor(),
     Country = col_factor(),
     Province = col_skip(),
-    City = col_skip()
+    City = col_skip(),
+    PID = col_double(),
+    CCID = col_double()
   )
 
   vbr_raw <- read_csv(path, col_types = colspec)

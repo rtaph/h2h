@@ -14,17 +14,15 @@ library(here)
 
 # Load custom functions and data
 devtools::load_all(".")
-combined_data <- read.csv(here("data-processed/combined_data.csv"), fileEncoding="latin1")
-coi_data <- read.csv(here("data-processed/filtered_hierarchy_data.csv"), fileEncoding="latin1") %>%
-  rename("COUNTRY_OF_CONTROL" = "CCTL")
-table_columns <- c("NAME", "LEVEL", "COUNTRY_OF_CONTROL")
 
-
+coi_data <- arrow::read_feather(here("data-processed/filtered_hierarchy_data.feather"))
+tbl_col_ids <- c("NAME", "LEVEL", "CCTL")
+tbl_col_names <- c("Name", "Level", "Country of Control")
 # Load CSS Styles
 css <- custom_css()
 
-# bnames <- as.character(unique(forcats::fct_c(h2h::vbr$BusinessName,
-#                   h2h::vbr$BusinessTradeName)))
+# bnames <- as.character(unique(forcats::fct_c(h2h::combined_data$BusinessName,
+#                   h2h::combined_data$BusinessTradeName)))
 # bnames <- bnames[!is.na(bnames) & !bnames == ""]
 # bnames <- c(head(bnames, 20))
 
@@ -53,7 +51,8 @@ app$layout(
               #             searchable = FALSE # TODO: test this out for speed
               dccInput(
                 id = "input_bname",
-                value = "Listel Canada Ltd"         # for testing
+                # value = "Listel Canada Ltd"         # for testing
+                value = "Westfair Foods Ltd"
                 # value = "Gyoza Bar Ltd"           # for testing
                 # value = "VLC Leaseholds Ltd"      # for testing
               ),
@@ -98,12 +97,35 @@ app$layout(
                 dccTab(label = "Business Details", children = list(
                   htmlDiv(
                     list(
+                      htmlDiv(list(
                       dbcCard(
                         list(
                           dbcCardHeader('Business Summary'),
-                          dbcCardBody(list())
+                          dbcCardBody(list(
+                            # Business Type Table
+                            dashDataTable(
+                              id = 'co-type',
+                              columns = list(label = "Primary Business Type", value = "PrimaryBusinessType"),
+                              page_size = 10,
+                              style_cell = css$tbl_fonts,
+                              style_header = css$tbl_hrow,
+                              style_cell_conditional = css$bs_tbl_align,
+                              style_as_list_view = TRUE
+                            )
+                          )
                         )
-                      ),
+                      ))), style=css$horiz_split),
+                      htmlDiv(list(
+                      dbcCard(
+                        list(
+                          dbcCardHeader("Company Size"),
+                          dbcCardBody(list(
+                            dccGraph(id = "num_emp_plot")
+                          ))
+                        )
+                      )
+                      ), style=css$horiz_split),
+                    htmlDiv(list(
                       dbcCard(
                         list(
                           dbcCardHeader('Inter-corporate Relationships'),
@@ -113,32 +135,19 @@ app$layout(
                               id = "related_co_table",
                               page_size = 10,
                               data = df_to_list(coi_data),
-                              columns = lapply(table_columns,
-                                               function(colName){
-                                                 list(
-                                                   id = colName,
-                                                   name = colName
-                              )
-                              }),
-                              fixed_columns = list(headers = TRUE),
+                              columns = map2(tbl_col_ids, tbl_col_names, function(col, col2) list(id = col, name = col2)),
                               style_cell_conditional = css$rc_tbl_colw,
+                              fixed_columns = css$fixed_headers,
+                              css = css$tbl_ovrflw,
+                              style_data = css$ovrflow_ws,
                               style_as_list_view = TRUE,
-                              style_header = css$rc_tbl_hrow,
-                              css = list(
-                                  list(
-                                    selector = '.dash-cell div.dash-cell-value',
-                                    rule = 'display: inline; white-space: inherit; overflow: inherit; text-overflow: inherit;'
-                                  )
-                                )))
-                            # style_data = list(
-                            #   whiteSpace = "normal"
-                            # ),
-                            # ,
-
+                              style_header = css$tbl_hrow,
+                              style_cell = css$tbl_fonts
+                            ))
                           )
                         )
                       )
-                    )
+                    ))),
                   )
                 ))
               ))
@@ -157,20 +166,101 @@ app$callback(
   list(output("related_co_table", "data")),
   list(input("input_bname", "value")),
   function(input_value) {
-    if (combined_data %>% filter(BusinessName == input_value) %>% select("PID") %>% unique() %>% nrow() < 1) {
+    if (vbr %>%
+      filter(BusinessName == input_value) %>%
+      select("PID") %>%
+      unique() %>% nrow() < 1) {
       # if no related companies found, return empty list.
       data <- list()
     }
     else {
-      selected_PID <- combined_data %>%
+      selected_PID <- vbr %>%
         filter(BusinessName == input_value) %>%
         select("PID") %>%
         unique()
-      data <- df_to_list(coi_data %>% filter(PID == selected_PID[[1]] & LEVEL > 0) %>% arrange(LEVEL))
+      data <- df_to_list(coi_data %>%
+        filter(PID == selected_PID[[1]] & LEVEL > 0) %>%
+        arrange(LEVEL))
     }
     list(data)
   }
 )
+
+# update business summary on "Business Details" tab
+app$callback(
+  list(
+    output("co-type", "data"),
+    output("co-type", "columns")
+  ),
+  list(input("input_bname", "value")),
+  function(input_value) {
+    data <- vbr %>%
+      filter((BusinessName == input_value)) %>%
+      arrange(desc(FOLDERYEAR)) %>%
+      top_n(n = 1, wt = FOLDERYEAR) %>%
+      select(BusinessType) %>%
+      unique() %>%
+      df_to_list()
+    columns <- c("BusinessType") %>% purrr::map(function(col) list(name = "Primary Business Type", id = col))
+    list(data, columns)
+  }
+)
+
+# plot number of employees for industry on "Business Details" tab
+app$callback(
+  output("num_emp_plot", "figure"),
+  list(input("input_bname", "value")),
+  function(input_value) {
+    emp_plot <- vbr %>%
+      mutate(FOLDERYEAR = formatC(vbr$FOLDERYEAR, width = 2, format = "d", flag = "0")) %>%
+      filter((BusinessName == input_value) & (FOLDERYEAR <= format(Sys.Date(), "%y"))) %>%
+      group_by(FOLDERYEAR, LicenceNumber) %>%
+      summarise(NumberofEmployees = mean(NumberofEmployees))
+
+    # if no data available
+    if (emp_plot %>% tidyr::drop_na() %>% nrow() < 1) {
+      emp_plot <- ggplot2::ggplot() +
+        ggplot2::geom_text() +
+        ggplot2::theme_void() +
+        ggplot2::annotate("text", label = "No data available.", x = 2, y = 15, size = 8) +
+        ggplot2::theme(
+          panel.grid.major = ggplot2::element_blank(),
+          panel.grid.minor = ggplot2::element_blank()
+        )
+      return(plotly::ggplotly(emp_plot))
+    }
+    # if data available
+    else {
+      emp_plot <- emp_plot %>% ggplot2::ggplot(ggplot2::aes(
+        x = FOLDERYEAR,
+        y = NumberofEmployees
+      )) +
+        ggplot2::stat_summary(fun = "sum", geom = "bar", fill = "royalblue4") +
+        ggplot2::labs(
+          y = "Number of Employees Reported",
+          x = "Year"
+        ) +
+        ggplot2::scale_x_discrete(
+          labels = function(x) paste0("20", x),
+          drop = FALSE,
+          limits = factor(seq(
+            vbr %>% select(FOLDERYEAR) %>% min(),
+            format(Sys.Date(), "%y")
+          ))
+        ) +
+        ggplot2::scale_y_continuous(expand = c(0, 0.1)) +
+        ggplot2::theme_bw() +
+        ggplot2::theme(
+          axis.text.x = ggplot2::element_text(angle = 90),
+          panel.background = ggplot2::element_rect(fill = "white"),
+          panel.grid.minor = ggplot2::element_blank(),
+          panel.grid.major.x = ggplot2::element_blank()
+        )
+      return(plotly::ggplotly(emp_plot, tooltip = "y"))
+    }
+  }
+)
+
 
 # update network plot on "License History" tab
 app$callback(

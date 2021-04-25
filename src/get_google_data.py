@@ -88,7 +88,6 @@ def format_coordinate(dataframe, drop=False):
 
 def get_distance_by_coordinate(formatted_business, name, API_Key):
     google_data = get_address_google(name, API_Key)
-    google_name = google_data["name"][0]
     filter_name = formatted_business[formatted_business["BusinessName"] == name]
     if filter_name.shape[0] == 0:
         warn = (
@@ -96,14 +95,17 @@ def get_distance_by_coordinate(formatted_business, name, API_Key):
             + filter_name
             + " in Business Licences data."
         )
-        return warn, 5000
+        google_name = "Not in Business Data"
+        return warn, 5000, google_name
     else:
         lat = float(filter_name[["lat"]].iloc[0])
         lng = float(filter_name[["lng"]].iloc[0])
     if google_data.shape[0] == 0:
         warn = "Could not find information about " + filter_name + " on Google maps."
-        return warn, 5000
+        google_name = "Not in Google maps."
+        return warn, 5000, google_name
     else:
+        google_name = google_data["name"][0]
         google_lat = google_data["lat"][0]
         google_lng = google_data["lng"][0]
     warn = "Giving distance between geometric information obtained."
@@ -153,21 +155,22 @@ def main(input_file, output_dir):
 
     keys = get_keys(".secret/key.json")
     API_Key = keys['API_Key']
-    print(cov_data.shape)
-
     formatted_cov_data = format_coordinate(cov_data, drop=True)
     if business_name:
         funerals = formatted_cov_data[formatted_cov_data['BusinessName'] == business_name]
+        output_name = business_name
     else:
         if business_type:
             funerals = formatted_cov_data[formatted_cov_data['BusinessType'] == business_type]
+            output_name = business_type
         else:
-            funerals = formatted_cov_data[formatted_cov_data['BusinessType'] == "Funeral Services"]
+            output_name = "Funeral Services"
+            funerals = formatted_cov_data[formatted_cov_data['BusinessType'] == business_type]
 
     output_data = get_comparison_dataframe(funerals, API_Key)
-    output_data.to_csv(path_or_buf= output_dir + '/google_map.csv', index=False)
+    output_data.to_csv(path_or_buf= output_dir + '/google_map' + output_name + '.csv', index=False)
     chart = google_map_figure(output_data)
-    chart.save(output_dir + '/google_map.html')
+    chart.save(output_dir + '/google_map' + output_name + '.html')
 
 if __name__=="__main__":
     input_file = args["--input"]
