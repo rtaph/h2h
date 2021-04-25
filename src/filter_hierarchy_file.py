@@ -1,7 +1,7 @@
 # author: Selma Duric
 # date: March 21, 2021
 
-'''This script will pull data from the linked_corp_data.csv and combined_data.csv and filter for matches on PID
+'''This script will pull data from the linked_corp_data.csv and combined_data.feather and filter for matches on PID
 and store it in a specified file,
 
 Usage: filter_hierarchy_file.py --combined_file=<combined_file>  --company_hierarchy_file=<company_hierarchy_file>  --target_file=<target_file>
@@ -37,9 +37,9 @@ def main(combined_file, company_hierarchy_file, target_file):
   # filter to only obtain list of identifiers to match
   unique_PID_list = combined_df['PID'].dropna().unique()
   
-  stat_canada_data = stat_canada_data.query("PID in @unique_PID_list | CCID in @unique_PID_list")
+  stat_canada_data = stat_canada_data.query("PID in @unique_PID_list | CCID in @unique_PID_list").reset_index()
   
-  stat_canada_data.to_csv(target_file, index=False)
+  stat_canada_data.to_feather(target_file)
 
 if __name__=="__main__":
     main(
