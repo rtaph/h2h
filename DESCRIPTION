@@ -29,6 +29,7 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Imports: 
+    arrow,
     dash,
     dashBootstrapComponents (>= 0.11.3),
     dashCoreComponents,
@@ -37,12 +38,15 @@ Imports:
     dplyr,
     htmlwidgets,
     igraph,
+    magrittr,
     memoise,
+    phonics,
     purrr,
     readr (>= 1.4.0),
     stringdist,
     stringr,
     tibble,
+    tidygraph,
     tidyr,
     usethis,
     visNetwork

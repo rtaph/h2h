@@ -49,6 +49,28 @@ data_statscan <- function(path = "data-processed/combined_data.csv",
 }
 
 
+#' Phonetic fingerprinting
+#'
+#' @param x A string
+#' @param algorithm A fingerprinting algorithm from the phonics package.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+phonetic <- function(x, algorithm = phonics::metaphone) {
+  x %>%
+    stringr::str_to_lower() %>%
+    stringr::str_replace_all("[[:punct:]]", " ") %>%
+    stringr::str_squish() %>%
+    stringi::stri_split_fixed(" ") %>%
+    map(algorithm) %>%
+    map(sort) %>%
+    map_chr(paste, collapse = "-")
+}
+
+
+
 #' Build the Business Graph
 #'
 #' @param vbr_file A scalar character nameing the Rda file with the Vancouver
@@ -58,6 +80,7 @@ data_statscan <- function(path = "data-processed/combined_data.csv",
 #'
 #' @return
 #' @importFrom igraph V E vertex_attr graph_from_edgelist edge_attr
+#' @importFrom dplyr if_else case_when
 #' @export
 #'
 #' @examples
@@ -67,8 +90,20 @@ data_statscan <- function(path = "data-processed/combined_data.csv",
 build_graph <- function(vbr_file = "data/vbr.rda",
                         statscan = data_statscan(),
                         save_to_pkg = TRUE) {
-  load(vbr_file)
-  byyear <- split(vbr, paste0("Y", vbr$FOLDERYEAR))
+  if (!fs::file_exists(vbr_file)) {
+    rlang::abort("data/vbr.rda does not exists. Please run 'make all' to
+                 build it.")
+  } else {
+    load(vbr_file)
+  }
+
+  # add fingerprints
+  vbr$fp1 <- forcats::fct_relabel(vbr$BusinessName, phonetic)
+  vbr$fp2 <- forcats::fct_relabel(vbr$BusinessTradeName, phonetic)
+
+  vbr$year <- if_else(vbr$FOLDERYEAR > 90, vbr$FOLDERYEAR + 1900, vbr$FOLDERYEAR + 2000)
+  vbr <- arrange(vbr, year)
+  byyear <- split(vbr, paste0("Y", vbr$year))
 
   edges <- tibble(
     id = character(0),
@@ -78,13 +113,24 @@ build_graph <- function(vbr_file = "data/vbr.rda",
 
   # set order of joins
   byvars <- list(
-    c("PostalCode", "BusinessName", "BusinessType", "lat"),
-    c("PostalCode", "BusinessName", "BusinessType"),
-    c("BusinessName", "BusinessTradeName", "BusinessType"),
-    c("BusinessName", "lat", "lon"),
-    c("BusinessTradeName", "lat", "lon"),
-    c("BusinessName", "BusinessType"),
-    c("BusinessName")
+    R01 = c("PostalCode", "BusinessName", "BusinessType", "BusinessSubType"),
+    R02 = c("PostalCode", "BusinessName", "BusinessType"),
+    R03 = c("BusinessName", "BusinessTradeName", "BusinessType"),
+    R04 = c("BusinessName", "lat", "lon"),
+
+    R05 = c("BusinessTradeName", "lat", "lon"),
+
+    R06 = c("BusinessName", "BusinessType"),
+    R07 = c("BusinessName"),
+
+    R08 = c("BusinessName" = "BusinessTradeName"),
+    R08 = c("BusinessTradeName" = "BusinessName"),
+
+    R09 = c("PostalCode", "fp1"),
+    R10 = c("PostalCode", "fp2"),
+
+    R11 = c("PostalCode", "fp2" = "fp1"),
+    R11 = c("PostalCode", "fp1" = "fp2")
   )
 
   for (i in seq_along(names(byyear))[-1]) {
@@ -94,7 +140,8 @@ build_graph <- function(vbr_file = "data/vbr.rda",
 
     for (j in seq_along(byvars)) {
       v <- byvars[[j]]
-      .A <- tidyr::drop_na(A[!A$id %in% edges$id, c("id", v)])
+      v <- set_names(v)
+      .A <- tidyr::drop_na(A[!A$id %in% edges$id, c("id", names(v))])
       .B <- tidyr::drop_na(B[!B$id2 %in% edges$id2, c("id2", v)])
       r1 <- inner_join(.A, .B, by = v, na_matches = "never")
       r1$rule <- j
@@ -102,36 +149,43 @@ build_graph <- function(vbr_file = "data/vbr.rda",
     }
   }
 
-  # TODO: fuzzy join on remaining, as well as block candidates
-
   nodes <- vbr %>%
-    select(
-      id, BusinessName, FOLDERYEAR, LicenceRSN,
-      LicenceNumber, BusinessTradeName, Status
-    ) %>%
+    select(id, BusinessName, FOLDERYEAR, everything()) %>%
+    mutate(year = dplyr::case_when(
+      FOLDERYEAR > 90 ~ FOLDERYEAR + 1900,
+      TRUE ~ FOLDERYEAR + 2000
+    )) %>%
     mutate(across(where(is.factor), as.character)) %>%
     bind_rows(statscan$nl)
 
 
   # generate an igraph object and save
   links <- rename(edges, from = id, to = id2) %>%
-    # mutate(across(c(to, from), ~ paste0("B", .))) %>%
-    mutate(weight = max(rule) - rule + 2) %>%
-    bind_rows(add_column(statscan$el, weight = 1L))
+    mutate(weight = as.numeric(stringr::str_remove(rule, "R"))) %>%
+    mutate(across(weight, ~(max(.) - . + 1) / max(.))) %>%
+    bind_rows(mutate(statscan$el, weight = 1L, rule = 12))
 
   # make the igraph object
-  g <- graph_from_edgelist(as.matrix(links[, c("from", "to")]))
-  igraph::edge.attributes(g) <- list(weight = links$weight)
+  g <- igraph::graph_from_edgelist(as.matrix(links[, c("from", "to")]))
+  igraph::edge.attributes(g) <- list(weight = links$weight,
+                                     rule = paste0("R", links$rule))
 
-  # Add names
-  i <- match(V(g)$name, nodes$id)
-  igraph::vertex_attr(g, "BusinessName") <- nodes[i, ]$BusinessName
-  igraph::vertex_attr(g, "LicenceNumber") <- nodes[i, ]$LicenceNumber
-  igraph::vertex_attr(g, "BusinessTradeName") <- nodes[i, ]$BusinessTradeName
+  # Add node attributes
+  i <- match(igraph::V(g)$name, nodes$id)
+  variables <- c("BusinessName", "LicenceNumber", "BusinessTradeName",
+                 "BusinessType", "BusinessSubType", "Status", "year",
+                 "NumberofEmployees", "foreign_ctl", "perc_missing",
+                 "PostalCode", "LocalArea", "Country", "lat", "lon")
+  for (x in variables) {
+    igraph::vertex_attr(g, x) <- nodes[i, ][[x]]
+  }
 
-  # TODO: Add singletons
+  # convert to tidygraph
+  g <- tidygraph::as_tbl_graph(g)
+
   if (save_to_pkg) {
     usethis::use_data(g, overwrite = TRUE)
+    devtools::document()
   }
 
   invisible(g)

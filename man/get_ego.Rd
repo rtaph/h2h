@@ -4,16 +4,16 @@
 \alias{get_ego}
 \title{Create an Ego Network Given a Query Point}
 \usage{
-get_ego(bname, qp = NULL, order = 20, mindist = 1)
+get_ego(bname, regex = TRUE, ignore_case = TRUE, order = 1, mindist = 1)
 }
 \arguments{
 \item{bname}{The name of the business to search}
 
-\item{qp}{The query point (qp), expressed as an ID}
-
 \item{order}{the size of the ego network. Defaults to 20.}
 
 \item{mindist}{the minimum weight to be considered in the ego network.}
+
+\item{qp}{The query point (qp), expressed as an ID}
 }
 \value{
 
@@ -25,5 +25,6 @@ Create an Ego Network Given a Query Point
 network <- get_ego(qp = "B7")
 
 bname <- "MML Properties Ltd"
+bname <- "Gyoza Bar Ltd"
 get_ego(bname)
 }

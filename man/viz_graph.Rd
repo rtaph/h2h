@@ -4,7 +4,13 @@
 \alias{viz_graph}
 \title{Plot a Temporal Ego Network of a Business' Licenses}
 \usage{
-viz_graph(bname = "Gyoza Bar Ltd")
+viz_graph(
+  bname = "Gyoza Bar",
+  regex = TRUE,
+  ignore_case = TRUE,
+  rule_filters = character(0),
+  max_size = 2500
+)
 }
 \arguments{
 \item{bname}{The business name to search}
@@ -14,9 +20,4 @@ viz_graph(bname = "Gyoza Bar Ltd")
 }
 \description{
 Plot a Temporal Ego Network of a Business' Licenses
-}
-\examples{
-bname <- "MML Properties Ltd"
-bname <- "Selarc Developments Ltd"
-viz_graph(bname)
 }
