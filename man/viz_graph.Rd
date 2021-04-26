@@ -21,3 +21,13 @@ viz_graph(
 \description{
 Plot a Temporal Ego Network of a Business' Licenses
 }
+\examples{
+# small networks
+viz_graph("Gyoza Bar")
+viz_graph("MML Properties Ltd")
+viz_graph("Selarc Developments Ltd")
+viz_graph("Westfair Foods Ltd")
+
+# Large network
+viz_graph("Lawson Lundell LLP", rule_filters = "R5")
+}

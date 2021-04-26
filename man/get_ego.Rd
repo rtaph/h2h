@@ -4,7 +4,7 @@
 \alias{get_ego}
 \title{Create an Ego Network Given a Query Point}
 \usage{
-get_ego(bname, regex = TRUE, ignore_case = TRUE, order = 1, mindist = 1)
+get_ego(bname, regex = TRUE, ignore_case = TRUE, order = 20, mindist = 1)
 }
 \arguments{
 \item{bname}{The name of the business to search}
