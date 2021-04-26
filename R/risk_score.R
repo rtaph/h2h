@@ -16,6 +16,8 @@
 profile_risk <- function(bname) {
 
   # TODO: find based on non-exact business name
+  
+  # network <- get_ego(input_value)
   i <- match(bname, h2h::vbr$BusinessName)
   j <- match(bname, h2h::vbr$BusinessTradeName)
   k <- unique(i, j)[1]

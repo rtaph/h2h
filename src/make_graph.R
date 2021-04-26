@@ -28,7 +28,7 @@ data_statscan <- function(path = "data-processed/combined_data.csv",
   sc_proc <- sc_raw %>%
     as_tibble() %>%
     select(CCID, PID, NAME, foreign_ctl = CCTL) %>%
-    mutate(across(c(PID, CCID), ~ paste0("C", .)))
+    mutate(across(c(PID, CCID), list(C = ~ paste0("C", .)))) 
 
   # Edgelist: Statscan -> Statscan
   # el2 <- sc_proc %>%
@@ -36,9 +36,10 @@ data_statscan <- function(path = "data-processed/combined_data.csv",
   #  filter(from %in% el1$to)
 
   # Nodelist: Statscan
-  nl <- distinct(sc_proc, id = CCID, BusinessName = NAME,
+  nl <- distinct(sc_proc, id = CCID_C, BusinessName = NAME,
                  foreign_ctl) %>%
-    dplyr::filter(id %in% el1$to | id %in% el1$from)
+    dplyr::filter(id %in% el1$to | id %in% el1$from)%>%
+    left_join(distinct(sc_proc, id=CCID_C, CCID, PID))
 
   # combined edgelist
   # el <- bind_rows(el1, el2)
@@ -175,7 +176,7 @@ build_graph <- function(vbr_file = "data/vbr.rda",
   variables <- c("BusinessName", "LicenceNumber", "BusinessTradeName",
                  "BusinessType", "BusinessSubType", "Status", "year",
                  "NumberofEmployees", "foreign_ctl", "perc_missing",
-                 "PostalCode", "LocalArea", "Country", "lat", "lon")
+                 "PostalCode", "LocalArea", "Country", "lat", "lon", "CCID", "PID")
   for (x in variables) {
     igraph::vertex_attr(g, x) <- nodes[i, ][[x]]
   }
@@ -191,4 +192,6 @@ build_graph <- function(vbr_file = "data/vbr.rda",
   invisible(g)
 }
 
+coi_data <- arrow::read_feather(here::here("data-processed/filtered_hierarchy_data.feather"))
+usethis::use_data(coi_data, overwrite = TRUE)
 build_graph()
