@@ -18,7 +18,7 @@ from docopt import docopt
 opt = docopt(__doc__)
 
 def main(combined_file, company_hierarchy_file, target_file):
-  stat_canada_data = pd.read_csv(company_hierarchy_file)
+  stat_canada_data = pd.read_csv(company_hierarchy_file, encoding='latin1')
   combined_df = pd.read_csv(combined_file, sep=",", low_memory=False, dtype={20: "str"})
   
   stat_canada_data.columns = stat_canada_data.columns.str.strip()

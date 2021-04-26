@@ -25,7 +25,7 @@ def main(license_file, company_hierarchy_file, target_file):
     cov_data = pd.read_csv(
         license_file, sep=",", low_memory=False, dtype={20: "str"}
     )
-    stat_canada_data = pd.read_csv(company_hierarchy_file)
+    stat_canada_data = pd.read_csv(company_hierarchy_file, encoding='latin1')
 
     cov_data = cov_data.assign(
         BusinessName_join=cov_data.BusinessName.str.lower().str.strip()
