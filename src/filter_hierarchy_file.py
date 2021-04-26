@@ -19,7 +19,7 @@ opt = docopt(__doc__)
 
 
 def main(combined_file, company_hierarchy_file, target_file):
-    stat_canada_data = pd.read_csv(company_hierarchy_file)
+    stat_canada_data = pd.read_csv(company_hierarchy_file, encoding ='latin1')
     combined_df = pd.read_csv(
         combined_file,
         sep=",",
