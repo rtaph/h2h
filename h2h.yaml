@@ -1,0 +1,13 @@
+name: h2h
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3
+  - karateclub
+  - docopt
+  - black
+  - matplotlib
+  - ipykernel
+  - pyarrow
+  - pandas

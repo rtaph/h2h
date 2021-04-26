@@ -37,5 +37,6 @@ clean :
 clean-processed :
 	rm -rf data-processed/combined_data.csv
 	rm -rf data-processed/filtered_hierarchy_data.csv
+	rm -rf data-processed/filtered_hierarchy_data.feather
 	rm -rf data/vbr.rda
 	rm -rf data/g.rda

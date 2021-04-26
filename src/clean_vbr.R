@@ -27,7 +27,7 @@ library(stringr)
 #' \dontrun{
 #' data_vbr(save_to_pkg = FALSE)
 #' }
-data_vbr <- function(path = "data-processed/combined_data.csv",
+data_vbr <- function(path = "data-raw/license_data.csv",
                      save_to_pkg = TRUE) {
   colspec <- cols(
     .default = col_character(),
@@ -60,7 +60,7 @@ data_vbr <- function(path = "data-processed/combined_data.csv",
 
   vbr <- vbr_raw %>%
     mutate(lower = tolower(BusinessName)) %>%
-    dplyr::filter(FOLDERYEAR>=10) %>%
+    #dplyr::filter(FOLDERYEAR>=10) %>%
     mutate(across(NumberofEmployees, as.numeric),
       lat = str_extract(Geom, "(?<=\\[)-?\\d+\\.\\d+(?=,)"),
       lon = str_extract(Geom, "(?<=, )-?\\d+\\.\\d+(?=\\])"),

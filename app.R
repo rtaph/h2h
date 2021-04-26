@@ -52,8 +52,8 @@ app$layout(
               dccInput(
                 id = "input_bname",
                 # value = "Listel Canada Ltd"         # for testing
-                value = "Westfair Foods Ltd"
-                # value = "Gyoza Bar Ltd"           # for testing
+                # value = "Westfair Foods Ltd"
+                value = "Gyoza Bar Ltd"           # for testing
                 # value = "VLC Leaseholds Ltd"      # for testing
               ),
               htmlBr(),
@@ -293,7 +293,7 @@ app$callback(
     lev <- case_when(r <= 1 ~ "low risk",
                      r <= 3 ~ "medium risk",
                      TRUE ~ "high risk")
-    
+
     color_back <- case_when(r <= 1 ~ "green",
                      r <= 3 ~ "yellow",
                      TRUE ~ "red")

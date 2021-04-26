@@ -1,6 +1,3 @@
-
-
-
 #' Create an Ego Network Given a Query Point
 #'
 #' @param bname The name of the business to search
@@ -10,30 +7,47 @@
 #'
 #' @return
 #' @export
-#' @importFrom igraph make_ego_graph
-#' @import igraph
+#' @importFrom stringr str_detect
+#' @import tidygraph
+#' @importFrom igraph make_ego_graph ego
+#' @importFrom tidygraph activate
 #'
 #' @examples
 #' network <- get_ego(qp = "B7")
 #'
 #' bname <- "MML Properties Ltd"
+#' bname <- "Gyoza Bar Ltd"
 #' get_ego(bname)
-get_ego <- function(bname, qp = NULL, order = 20, mindist = 1) {
-  if (is.null(qp)) {
-    # TODO: find based on non-exact business name
-    i <- match(bname, h2h::vbr$BusinessName)
-    j <- match(bname, h2h::vbr$BusinessTradeName)
-    qp <- h2h::vbr$id[unique(i, j)]
+get_ego <- function(bname, regex = TRUE, ignore_case = TRUE,
+                    order = 20, mindist = 1) {
+
+  if (inherits(bname, "pattern")) {
+    pattern <- bname
+  } else if (regex) {
+    pattern <- stringr::regex(bname, ignore_case = ignore_case)
+  } else {
+    pattern <- stringr::fixed(bname, ignore_case = TRUE)
   }
-  egos <- make_ego_graph(h2h::g, order = order, nodes = qp, mindist = mindist)
-  gnew <- purrr::reduce(egos, igraph::union)
-  va <- vertex_attr(g)
-  i <- match(V(gnew)$name, va$name)
-  igraph::vertex_attr(gnew, "BusinessName") <- va$BusinessName[i]
-  igraph::vertex_attr(gnew, "LicenceNumber") <- va$LicenceNumber[i]
-  igraph::vertex_attr(gnew, "va$BusinessTradeName") <- va$BusinessTradeName[i]
-  gnew
+
+  # determine which nodes match the business name
+  qp <- h2h::g %N>%
+    filter(str_detect(BusinessName, pattern) |
+             str_detect(BusinessTradeName, pattern)) %>%
+    pull(name)
+
+  # expand the set of nodes to include the neighbourhood
+  egos <- ego_mem(g, order=order, nodes = qp, mindist = 0)
+
+  # return a graph of the ego networks
+  h2h::g %>%
+    activate(nodes) %>%
+    filter(name %in% unique(names(unlist(egos))))
+
 }
+
+ego_mem <- memoise::memoise(ego)
+
+
 
 #' Plot a Temporal Ego Network of a Business' Licenses
 #'
@@ -41,34 +55,125 @@ get_ego <- function(bname, qp = NULL, order = 20, mindist = 1) {
 #'
 #' @return
 #' @export
+#' @import igraph
 #' @importFrom igraph diameter
 #' @importFrom dplyr mutate left_join
 #' @importFrom stringr str_glue
-#' @importFrom visNetwork visNetwork toVisNetworkData
+#' @importFrom visNetwork visNetwork toVisNetworkData visOptions
 #'
 #' @examples
-#' bname <- "MML Properties Ltd"
-#' bname <- "Selarc Developments Ltd"
-#' viz_graph(bname)
-viz_graph <- function(bname = "Gyoza Bar Ltd") {
-  network <- get_ego(bname)
+#' # small networks
+#' viz_graph("Gyoza Bar")
+#' viz_graph("MML Properties Ltd")
+#' viz_graph("Selarc Developments Ltd")
+#' viz_graph("Westfair Foods Ltd")
+#'
+#' # Large network
+#' viz_graph("Lawson Lundell LLP", rule_filters = "R5")
+viz_graph <- function(bname = "Gyoza Bar", regex = TRUE, ignore_case = TRUE,
+                      rule_filters = character(0), max_size = 2500) {
+  network <- get_ego(bname, regex = regex, ignore_case = ignore_case)
 
-  if (length(igraph::V(network)) > 200) {
-    stop("The graph is too large to visualize")
+  if (length(igraph::V(network)) > max_size) {
+    warning("The graph is too large to visualize. Prunning back the order.")
+    for (k in seq(19, 1)) {
+      g <-  get_ego(bname, order = k)
+      if (length(igraph::V(network)) <= max_size) {
+        break()
+      }
+    }
   }
-  igraph::edge_attr(network, "weight") <- 1
-  d <- igraph::diameter(network)
+
+  # filter out edges
+  network <- network %>%
+    activate(edges) %>%
+    filter(!rule %in% rule_filters)
 
   data <- toVisNetworkData(network)
-  s <- function(x) if_else(is.na(x), "", x)
+  data$edges$value <- data$edges$weight
+  data$edges$label <- data$edges$rule
+  data$edges$arrows <- "to"
+  s <- function(x) dplyr::if_else(is.na(x), "", x)
   data$nodes <- data$nodes %>%
+    arrange(year, BusinessName) %>%
     mutate(
-      label = str_glue("{s(LicenceNumber)}
+      label = str_glue("{year}
                         {s(BusinessName)}
                         {s(BusinessTradeName)}"),
-      group = BusinessName
-    )
-  # TODO: Add weights
+      group = BusinessName,
+      #shape = dplyr::case_when(Status %in% c("Issued", "Pending") ~ "dot",
+      #                  TRUE ~ "text"),
+      color = dplyr::case_when(!Status %in% c("Issued", "Pending") ~ "lightgrey",
+                        TRUE ~ NA_character_),
+      level = year,
+      x = as.integer(forcats::fct_inorder(BusinessName)))
+
+  d <- diff(range(data$nodes$year, na.rm = TRUE)) + 1L
+
+  viz <- visNetwork(
+    nodes = data$nodes,
+    edges = data$edges,
+    main = str_glue("Business history: {d + 1} years"),
+    height = "600px",
+    width = "100%"
+  ) %>%
+    visNetwork::visOptions(highlightNearest = TRUE) %>%
+    visNetwork::visOptions(selectedBy = list(variable = "BusinessName",
+                                             multiple = T)) %>%
+    visNetwork::visHierarchicalLayout(direction = "LR",
+                                      treeSpacing = 10,
+                                      nodeSpacing = 5) %>%
+    visNetwork::visPhysics(stabilization = FALSE)
+
+  # reduce computational complexity of displaying if graph is large
+  if (igraph::gsize(network) > 1500) {
+    viz <- viz %>%
+      visNetwork::visIgraphLayout(physics = FALSE, smooth = FALSE)
+  }
+  viz
+}
+
+
+
+
+#' Plot a Graph Using VisNetwork
+#'
+#' @param network The igraph object
+#'
+#' @return
+#' @export
+#' @import igraph
+#' @importFrom igraph diameter
+#' @importFrom dplyr mutate left_join
+#' @importFrom stringr str_glue
+#' @importFrom visNetwork visNetwork toVisNetworkData visOptions
+#'
+#' @examples
+#' network <- filter(g, BusinessName == "Gyoza Bar Ltd")
+#' viz(network)
+viz <- function(network) {
+
+  data <- toVisNetworkData(network)
+  data$edges$value <- data$edges$weight
+  data$edges$label <- data$edges$rule
+  data$edges$arrows <- "to"
+
+  s <- function(x) dplyr::if_else(is.na(x), "", x)
+  data$nodes <- data$nodes %>%
+    arrange(BusinessName) %>%
+    mutate(
+      label = str_glue("{year}
+                        {s(BusinessName)}
+                        {s(BusinessTradeName)}"),
+      group = BusinessName,
+      shape = case_when(Status %in% c("Issued", "Pending") ~ "dot",
+                        TRUE ~ "text"),
+      color = dplyr::case_when(!Status %in% c("Issued", "Pending") ~ "lightgrey",
+                        TRUE ~ NA_character_),
+      level = year,
+      x = as.integer(forcats::fct_inorder(BusinessName)))
+
+  d <- diff(range(data$nodes$year, na.rm = TRUE)) + 1L
 
   viz <- visNetwork(
     nodes = data$nodes,
@@ -76,6 +181,11 @@ viz_graph <- function(bname = "Gyoza Bar Ltd") {
     main = str_glue("Business history: {d + 1} years"),
     height = "500px",
     width = "100%"
-  )
+  ) %>%
+    visNetwork::visOptions(highlightNearest = TRUE) %>%
+    visNetwork::visOptions(selectedBy = list(variable = "BusinessName", multiple = T)) %>%
+    visNetwork::visHierarchicalLayout(direction = "LR",
+                                      treeSpacing = 10, nodeSpacing = 5)
   viz
 }
+
