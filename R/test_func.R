@@ -16,7 +16,7 @@ make_related_co_table <- function(input_value) {
     as_tibble() %>%
     pull(PID) %>%
     unique()
-    
+  
   # selected_PID <- vbr %>%
   #   filter(BusinessName == input_value) %>%
   #   pull(PID) %>%
@@ -94,7 +94,7 @@ num_emp_plot <- function(input_value) {
   emp_plot <- network %N>%
     as_tibble() %>%
     distinct(year, LicenceNumber, NumberofEmployees)
-    
+  
   
   
   # emp_plot <- vbr %>%
@@ -102,7 +102,7 @@ num_emp_plot <- function(input_value) {
   #   filter((BusinessName == input_value) & (FOLDERYEAR <= format(Sys.Date(), "%y"))) %>%
   #   group_by(FOLDERYEAR, LicenceNumber) %>%
   #   summarise(NumberofEmployees = mean(NumberofEmployees))
-
+  
   # if no data available
   if (emp_plot %>% tidyr::drop_na() %>% nrow() < 1) {
     emp_plot <- ggplot() +
@@ -139,54 +139,6 @@ num_emp_plot <- function(input_value) {
 }
 
 
-# app$callback(
-#   list(
-#     output("card_score", "children"),
-#     output("card_score", "color")
-#   ),
-#   list(
-#     input("input_bname", "value")
-#   ),
-
-
-#' Title Calculates risk score
-#'
-#' @param bname str indicates business name
-#'
-#' @return
-#'
-#' @examples
-#' bname = "Gyoza Bar Ltd"
-#' make_score_card(bname)
-#' 
-make_score_card <- function(bname) {
-  bname <- closest_business_name(bname)
-  r <- calc_risk(bname)
-  pr <- profile_risk(bname)
-
-  lev <- case_when(
-    r <= 1 ~ "low risk",
-    r <= 3 ~ "medium risk",
-    TRUE ~ "high risk"
-  )
-
-  color_back <- case_when(
-    r <= 1 ~ "green",
-    r <= 3 ~ "yellow",
-    TRUE ~ "red"
-  )
-
-  msg <- c()
-  msg[1] <- if_else(pr$missingdata, "has a lot of missing data", NA_character_)
-  msg[2] <- if_else(pr$recent, "does not have a long history", NA_character_)
-  msg[3] <- if_else(pr$foreign, "is not located in Canada", NA_character_)
-  msg[4] <- if_else(pr$status, "is inactive or shut", NA_character_)
-  msg <- glue::glue_collapse(na.omit(msg), sep = ", ", last = " and ")
-
-  list(str_glue("Risk Score: {r} / 4 ({lev}). This business {msg}."), color_back)
-}
-
-
 #' Find the closest matching Business
 #'
 #' @param input_value string pattern to search business name
@@ -208,4 +160,155 @@ closest_business_name <- function(input_value) {
   # candidates <- agrep(input_value, candidates, value = TRUE, ignore.case = TRUE)
   
   candidates[which.min(stringdist::stringdist(input_value, candidates))[1]]
+}
+
+#' Calculates risk score
+#'
+#' @param bname str indicates business name
+#'
+#' @return
+#'
+#' @examples
+#' bname = "Gyoza Bar Ltd"
+#' get_overall_risk_score_card(bname)
+#' 
+get_overall_risk_score_card <- function(bname) {
+  bname <- closest_business_name(bname)
+  r <- calc_risk(bname)
+  # pr <- profile_risk(bname)
+  
+  lev <- case_when(
+    r <= 1 ~ "low risk",
+    r <= 3 ~ "medium risk",
+    TRUE ~ "high risk"
+  )
+  
+  color_back <- case_when(
+    r <= 1 ~ "green",
+    r <= 3 ~ "yellow",
+    TRUE ~ "red"
+  )
+  
+  list(str_glue("{r} / 4 ({lev})"), color_back)
+}
+
+#' Fetches comment about missing data
+#'
+#' @param bname str indicates business name
+#'
+#' @return
+#'
+#' @examples
+#' bname = "Gyoza Bar Ltd"
+#' get_missing_data_comment(bname)
+#' 
+get_missing_data_comment <- function(bname) {
+  bname <- closest_business_name(bname)
+  pr <- profile_risk(bname)
+  msg <- if_else(pr$missingdata, 
+                 str_glue("    ", 
+                          "\U274C", 
+                          "  has a lot of missing data"), 
+                 str_glue("    ", 
+                          "\U2705", 
+                          "  has few or no missing data"))
+  
+  msg
+}
+
+#' Fetches comment about history
+#'
+#' @param bname str indicates business name
+#'
+#' @return
+#'
+#' @examples
+#' bname = "Gyoza Bar Ltd"
+#' get_history_comment(bname)
+#' 
+get_history_comment <- function(bname) {
+  bname <- closest_business_name(bname)
+  pr <- profile_risk(bname)
+  msg <- if_else(pr$recent, 
+                 str_glue("    ", "\U274C", "  does not have a long history"), 
+                 str_glue("    ", "\U2705", "  has a long history"))
+  msg
+}
+
+#' Fetches comment about location
+#'
+#' @param bname str indicates business name
+#'
+#' @return
+#'
+#' @examples
+#' bname = "Gyoza Bar Ltd"
+#' get_location_comment(bname)
+#' 
+get_location_comment <- function(bname) {
+  bname <- closest_business_name(bname)
+  pr <- profile_risk(bname)
+  
+  msg <- if_else(pr$foreign, 
+                 str_glue("    ", "\U274C", "  is not located in Canada"), 
+                 str_glue("    ", "\U2705", "  is located in Canada"))
+  
+  msg
+}
+
+#' Fetches comment about operation
+#'
+#' @param bname str indicates business name
+#'
+#' @return
+#'
+#' @examples
+#' bname = "Gyoza Bar Ltd"
+#' get_operative_comment(bname)
+#' 
+get_operative_comment <- function(bname) {
+  bname <- closest_business_name(bname)
+  pr <- profile_risk(bname)
+  msg <- if_else(pr$status, 
+                 str_glue("    ", "\U274C", "  is inactive or shut"), 
+                 str_glue("    ", "\U2705", "  is opertive"))
+  msg
+}
+
+
+#' Calculates risk score
+#'
+#' @param bname str indicates business name
+#'
+#' @return
+#'
+#' @examples
+#' bname = "Gyoza Bar Ltd"
+#' make_score_card(bname)
+#' 
+make_score_card <- function(bname) {
+  bname <- closest_business_name(bname)
+  r <- calc_risk(bname)
+  pr <- profile_risk(bname)
+  
+  lev <- case_when(
+    r <= 1 ~ "low risk",
+    r <= 3 ~ "medium risk",
+    TRUE ~ "high risk"
+  )
+  
+  color_back <- case_when(
+    r <= 1 ~ "green",
+    r <= 3 ~ "yellow",
+    TRUE ~ "red"
+  )
+  
+  msg <- c()
+  msg[1] <- if_else(pr$missingdata, "has a lot of missing data", NA_character_)
+  msg[2] <- if_else(pr$recent, "does not have a long history", NA_character_)
+  msg[3] <- if_else(pr$foreign, "is not located in Canada", NA_character_)
+  msg[4] <- if_else(pr$status, "is inactive or shut", NA_character_)
+  msg <- glue::glue_collapse(na.omit(msg), sep = ", ", last = " and ")
+  
+  list(str_glue("Risk Score: {r} / 4 ({lev}). This business {msg}."), color_back)
 }
