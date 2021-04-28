@@ -13,12 +13,10 @@
 #' @importFrom tidygraph activate
 #'
 #' @examples
-#' network <- get_ego(qp = "B7")
-#'
 #' bname <- "MML Properties Ltd"
 #' bname <- "Gyoza Bar Ltd"
 #' get_ego(bname)
-get_ego <- function(bname, regex = TRUE, ignore_case = TRUE,
+.get_ego <- function(bname, regex = TRUE, ignore_case = TRUE,
                     order = 20, mindist = 1) {
 
   if (inherits(bname, "pattern")) {
@@ -36,7 +34,7 @@ get_ego <- function(bname, regex = TRUE, ignore_case = TRUE,
     pull(name)
 
   # expand the set of nodes to include the neighbourhood
-  egos <- ego_mem(g, order=order, nodes = qp, mindist = 0)
+  egos <- igraph::ego(g, order=order, nodes = qp, mindist = 0)
 
   # return a graph of the ego networks
   h2h::g %>%
@@ -45,7 +43,19 @@ get_ego <- function(bname, regex = TRUE, ignore_case = TRUE,
 
 }
 
-ego_mem <- memoise::memoise(ego)
+#' Create an Ego Network Given a Business Name
+#'
+#' @inheritParams .get_ego
+#'
+#' @examples
+#'
+#' bname <- "MML Properties Ltd"
+#' bname <- "Gyoza Bar Ltd"
+#' get_ego(bname)
+get_ego <- memoise::memoise(
+  .get_ego,
+  cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h"))
+)
 
 
 
@@ -70,7 +80,7 @@ ego_mem <- memoise::memoise(ego)
 #'
 #' # Large network
 #' viz_graph("Lawson Lundell LLP", rule_filters = "R5")
-viz_graph <- function(bname = "Gyoza Bar", regex = TRUE, ignore_case = TRUE,
+viz_graph <- function(bname = "Gyoza Bar Lt", regex = TRUE, ignore_case = TRUE,
                       rule_filters = character(0), max_size = 2500) {
   network <- get_ego(bname, regex = regex, ignore_case = ignore_case)
 
@@ -120,10 +130,16 @@ viz_graph <- function(bname = "Gyoza Bar", regex = TRUE, ignore_case = TRUE,
     visNetwork::visOptions(highlightNearest = TRUE) %>%
     visNetwork::visOptions(selectedBy = list(variable = "BusinessName",
                                              multiple = T)) %>%
-    visNetwork::visHierarchicalLayout(direction = "LR",
-                                      treeSpacing = 10,
-                                      nodeSpacing = 5) %>%
     visNetwork::visPhysics(stabilization = FALSE)
+
+  # use hierarchical layout if no links to stats can
+  if (!any(is.na(data$nodes$level))) {
+    viz <- viz %>%
+      visNetwork::visHierarchicalLayout(
+        direction = "LR",
+        treeSpacing = 10,
+        nodeSpacing = 5)
+  }
 
   # reduce computational complexity of displaying if graph is large
   if (igraph::gsize(network) > 1500) {
@@ -183,9 +199,18 @@ viz <- function(network) {
     width = "100%"
   ) %>%
     visNetwork::visOptions(highlightNearest = TRUE) %>%
-    visNetwork::visOptions(selectedBy = list(variable = "BusinessName", multiple = T)) %>%
+    visNetwork::visOptions(
+      selectedBy = list(variable = "BusinessName", multiple = T)
+      ) %>%
     visNetwork::visHierarchicalLayout(direction = "LR",
                                       treeSpacing = 10, nodeSpacing = 5)
   viz
+}
+
+#' Clear the h2h cache
+#'
+#' @export
+clear_disk_cache <- function() {
+  fs::dir_delete(rappdirs::user_cache_dir("h2h"))
 }
 

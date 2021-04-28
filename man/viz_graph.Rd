@@ -5,7 +5,7 @@
 \title{Plot a Temporal Ego Network of a Business' Licenses}
 \usage{
 viz_graph(
-  bname = "Gyoza Bar",
+  bname = "Gyoza Bar Lt",
   regex = TRUE,
   ignore_case = TRUE,
   rule_filters = character(0),

@@ -7,45 +7,51 @@
 #' @param bname The name of a business.
 #'
 #' @return
-#' @export
+.profile_risk <- function(bname) {
+
+  network <- get_ego(bname)
+  nodes <- as_tibble(network)
+
+  metrics <- list()
+
+
+  # missing
+  missing_count <- nodes %>%
+    pull(perc_missing) %>%
+    mean(na.rm = TRUE)
+  metrics$missingdata <- missing_count >= 30
+
+  # Age (number of licenses in the network)
+  age_range <- nodes %>%
+    summarise(age_range = n_distinct(year, na.rm = TRUE)) %>%
+    pull(age_range)
+  metrics$recent <- age_range < 4
+
+  # Are they based in Canada or abroad?
+  provinces <- nodes %>%
+    summarise(provinces = unique(prov_cleaned, na.rm = TRUE)) %>%
+    pull(provinces)
+  metrics$foreign <- any(provinces == "Other", na.rm = TRUE)
+
+  # Are any inactive?
+  closed_status <- c("Gone Out of Business", "Cancelled", "Inactive")
+  metrics$status <- any(nodes$Status %in% closed_status)
+
+  metrics
+}
+
+#' Compute a Risk Score for a Company
+#'
+#' @inheritParams .profile_risk
 #'
 #' @examples
 #'
 #' bname <- "MML Properties Ltd"
 #' profile_risk(bname)
-profile_risk <- function(bname) {
-
-  # TODO: find based on non-exact business name
-  
-  # network <- get_ego(input_value)
-  i <- match(bname, h2h::vbr$BusinessName)
-  j <- match(bname, h2h::vbr$BusinessTradeName)
-  k <- unique(i, j)[1]
-  qp <- h2h::vbr$id[k]
-
-
-  metrics <- list()
-
-  # missing
-  metrics$missingdata <- vbr$perc_missing[k] < 30
-
-  # Age (number of licenses in the network)
-  network <- get_ego(bname)
-  igraph::edge_attr(network, "weight") <- 1
-  metrics$recent <- igraph::diameter(network) < 4
-
-  # Are they based in Canada or abroad?
-  metrics$foreign <- vbr$prov_cleaned[k] == "Other"
-
-  # Do they have employees?
-  #metrics$has_employees <- vbr$NumberofEmployees[k] == 0
-
-  # Are they based in Canada or abroad?
-  x <- c("Gone Out of Business", "Cancelled", "Inactive")
-  metrics$status <- vbr$Status[k] %in% x
-
-  metrics
-}
+profile_risk <- memoise::memoise(
+  f = .profile_risk,
+  cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h"))
+)
 
 
 #' Compute Risk
