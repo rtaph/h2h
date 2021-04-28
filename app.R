@@ -15,9 +15,10 @@ library(here)
 # Load custom functions and data
 devtools::load_all(".")
 
-# coi_data <- arrow::read_feather(here("data-processed/filtered_hierarchy_data.feather"))
+# define column names
 tbl_col_ids <- c("NAME", "LEVEL", "CCTL")
 tbl_col_names <- c("Name", "Level", "Country of Control")
+
 # Load CSS Styles
 css <- custom_css()
 
@@ -33,7 +34,7 @@ app$layout(
   dbcContainer(
     list(
       htmlH1("Company Risk Dashboard",
-        style = css$header
+             style = css$header
       ),
       dbcRow(
         list(
@@ -71,10 +72,27 @@ app$layout(
                     list(
                       dbcCard(
                         list(
-                          dbcAlert(
-                            #is_open = risk_score(bname) > 2,
-                            id = "card_score"
+                          dbcRow(
+                            list(
+                              dbcCol(
+                                list(
+                                  htmlH5("Risk Score", style=list("text-align"="center")),
+                                  dbcAlert(id = "overall_risk_score", style=list("text-align"="center"))
+                                )
+                              ),
+                              dbcCol(
+                                list(
+                                  htmlH5(id = "card_score", style=list("text-align"="center")),
+                                  htmlDiv(id = "missing_data_comment"),
+                                  htmlDiv(id = "history_comment"),
+                                  htmlDiv(id = "location_comment"),
+                                  htmlDiv(id = "operative_score")
+                                )
+                              )
+                            )
                           ),
+
+
                           dbcCardBody(
                             htmlDiv(id = "network_div", children = list(
                               htmlIframe(
@@ -98,56 +116,56 @@ app$layout(
                   htmlDiv(
                     list(
                       htmlDiv(list(
-                      dbcCard(
-                        list(
-                          dbcCardHeader('Business Summary'),
-                          dbcCardBody(list(
-                            # Business Type Table
-                            dashDataTable(
-                              id = 'co-type',
-                              columns = list(label = "Primary Business Type", value = "PrimaryBusinessType"),
-                              page_size = 10,
-                              style_cell = css$tbl_fonts,
-                              style_header = css$tbl_hrow,
-                              style_cell_conditional = css$bs_tbl_align,
-                              style_as_list_view = TRUE
+                        dbcCard(
+                          list(
+                            dbcCardHeader('Business Summary'),
+                            dbcCardBody(list(
+                              # Business Type Table
+                              dashDataTable(
+                                id = 'co-type',
+                                columns = list(label = "Primary Business Type", value = "PrimaryBusinessType"),
+                                page_size = 10,
+                                style_cell = css$tbl_fonts,
+                                style_header = css$tbl_hrow,
+                                style_cell_conditional = css$bs_tbl_align,
+                                style_as_list_view = TRUE
+                              )
                             )
-                          )
-                        )
-                      ))), style=css$horiz_split),
+                            )
+                          ))), style=css$horiz_split),
                       htmlDiv(list(
-                      dbcCard(
-                        list(
-                          dbcCardHeader("Company Size"),
-                          dbcCardBody(list(
-                            dccGraph(id = "num_emp_plot")
-                          ))
-                        )
-                      )
-                      ), style=css$horiz_split),
-                    htmlDiv(list(
-                      dbcCard(
-                        list(
-                          dbcCardHeader('Inter-corporate Relationships'),
-                          dbcCardBody(
-                            list(
-                            dashDataTable(
-                              id = "related_co_table",
-                              page_size = 10,
-                              data = df_to_list(coi_data),
-                              columns = map2(tbl_col_ids, tbl_col_names, function(col, col2) list(id = col, name = col2)),
-                              style_cell_conditional = css$rc_tbl_colw,
-                              fixed_columns = css$fixed_headers,
-                              css = css$tbl_ovrflw,
-                              style_data = css$ovrflow_ws,
-                              style_as_list_view = TRUE,
-                              style_header = css$tbl_hrow,
-                              style_cell = css$tbl_fonts
+                        dbcCard(
+                          list(
+                            dbcCardHeader("Company Size"),
+                            dbcCardBody(list(
+                              dccGraph(id = "num_emp_plot")
                             ))
                           )
                         )
-                      )
-                    ))),
+                      ), style=css$horiz_split),
+                      htmlDiv(list(
+                        dbcCard(
+                          list(
+                            dbcCardHeader('Inter-corporate Relationships'),
+                            dbcCardBody(
+                              list(
+                                dashDataTable(
+                                  id = "related_co_table",
+                                  page_size = 10,
+                                  data = df_to_list(coi_data),
+                                  columns = map2(tbl_col_ids, tbl_col_names, function(col, col2) list(id = col, name = col2)),
+                                  style_cell_conditional = css$rc_tbl_colw,
+                                  fixed_columns = css$fixed_headers,
+                                  css = css$tbl_ovrflw,
+                                  style_data = css$ovrflow_ws,
+                                  style_as_list_view = TRUE,
+                                  style_header = css$tbl_hrow,
+                                  style_cell = css$tbl_fonts
+                                ))
+                            )
+                          )
+                        )
+                      ))),
                   )
                 ))
               ))
@@ -165,8 +183,10 @@ app$layout(
 app$callback(
   list(output("related_co_table", "data")),
   list(input("input_bname", "value")),
-  memoise::memoize(make_related_co_table, 
-                   cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h")))
+  memoise::memoize(
+    make_related_co_table,
+    cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h"))
+  )
 )
 
 # update business summary on "Business Details" tab
@@ -176,8 +196,10 @@ app$callback(
     output("co-type", "columns")
   ),
   list(input("input_bname", "value")),
-  memoise::memoize(make_co_type, 
-                   cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h")))
+  memoise::memoize(
+    make_co_type,
+    cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h"))
+  )
 )
 
 # plot number of employees for industry on "Business Details" tab
@@ -194,28 +216,82 @@ app$callback(
   list(
     input("input_bname", "value")
   ),
-  memoise::memoize(function(x) {
+  memoise::memoize(function(x = "Gyoza Bar Ltd") {
     viz <- viz_graph(x)
 
     # workaround
     tempfile <- here::here("network.html")
     htmlwidgets::saveWidget(viz, file = tempfile)
     paste(readLines(tempfile), collapse = "")
-  })
+  },
+  cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h")))
+)
+
+app$callback(
+  output("card_score", "children"),
+  list(
+    input("input_bname", "value")
+  ),
+  closest_business_name
+)
+
+app$callback(
+  output("missing_data_comment", "children"),
+  list(
+    input("input_bname", "value")
+  ),
+  memoise::memoize(get_missing_data_comment,
+                   cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h")))
+)
+
+app$callback(
+  output("history_comment", "children"),
+  list(
+    input("input_bname", "value")
+  ),
+  memoise::memoize(
+    get_history_comment,
+    cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h"))
+  )
+)
+app$callback(
+  output("location_comment", "children"),
+  list(
+    input("input_bname", "value")
+  ),
+  memoise::memoize(
+    get_location_comment,
+    cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h"))
+  )
+)
+
+app$callback(
+  output("operative_score", "children"),
+  list(
+    input("input_bname", "value")
+  ),
+  memoise::memoize(
+    get_operative_comment,
+    cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h"))
+  )
 )
 
 app$callback(
   list(
-    output("card_score", "children"),
-    output("card_score", "color")
+    output("overall_risk_score", "children"),
+    output("overall_risk_score", "color")
   ),
   list(
     input("input_bname", "value")
   ),
-  
-  memoise::memoize(make_score_card, 
-                   cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h")))
+
+  memoise::memoize(
+    get_overall_risk_score_card,
+    cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h"))
+  )
 )
+
+
 
 if (Sys.getenv("DYNO") == "") {
   app$run_server(
