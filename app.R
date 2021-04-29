@@ -60,21 +60,24 @@ app$layout(
             list(
               htmlBr(),
               dbcLabel("Company Name:"),
-              # dccDropdown(id = "input_bname",
+              # dccDropdown(id = "typed_bname",
               #             options = map(bnames, ~ list(label = ., value = .)),
               #             value = "Gyoza Bar Ltd",
               #             clearable = TRUE,
               #             searchable = FALSE # TODO: test this out for speed
               dccInput(
-                id = "input_bname",
+                id = "typed_bname",
                 # value = "Listel Canada Ltd"         # for testing
                 # value = "Westfair Foods Ltd"
                 value = "Gyoza Bar Ltd"          # for testing
                 # value = "VLC Leaseholds Ltd"      # for testing
               ),
               htmlBr(),
-              dbcLabel("Address:"),
-              dccInput(),
+              htmlButton("Submit", n_clicks = 0, id="btn_submit"),
+              htmlBr(),
+              # dbcLabel("Address:"),
+              # dccInput(),
+              htmlDiv(id="input_bname", children = "Gyoza Bar Ltd", hidden = TRUE),
               htmlHr(),
               dccMarkdown(legend, style = css$small)
             )
@@ -194,11 +197,23 @@ app$layout(
     )
   )
 )
+# Implement Submit button
+
+app$callback(
+  output("input_bname", "children"),
+  list(
+    input("btn_submit", "n_clicks"),
+    state("typed_bname", "value")
+  ),
+  function (n_click, value) {
+    closest_business_name(value) 
+  }
+)
 
 # update related companies table on "Business Details" tab
 app$callback(
   list(output("related_co_table", "data")),
-  list(input("input_bname", "value")),
+  list(input("input_bname", "children")),
   memoise::memoize(
     make_related_co_table,
     cache = h2h_cache
@@ -211,7 +226,7 @@ app$callback(
     output("co-type", "data"),
     output("co-type", "columns")
   ),
-  list(input("input_bname", "value")),
+  list(input("input_bname", "children")),
   memoise::memoize(
     make_co_type,
     cache = h2h_cache
@@ -221,7 +236,7 @@ app$callback(
 # plot number of employees for industry on "Business Details" tab
 app$callback(
   output("num_emp_plot", "figure"),
-  list(input("input_bname", "value")),
+  list(input("input_bname", "children")),
   num_emp_plot
 )
 
@@ -230,7 +245,7 @@ app$callback(
 app$callback(
   output("network_plot", "srcDoc"),
   list(
-    input("input_bname", "value")
+    input("input_bname", "children")
   ),
   memoise::memoize(function(x = "Gyoza Bar Ltd") {
     viz <- viz_graph(x)
@@ -246,7 +261,7 @@ app$callback(
 app$callback(
   output("card_score", "children"),
   list(
-    input("input_bname", "value")
+    input("input_bname", "children")
   ),
   closest_business_name
 )
@@ -254,7 +269,7 @@ app$callback(
 app$callback(
   output("missing_data_comment", "children"),
   list(
-    input("input_bname", "value")
+    input("input_bname", "children")
   ),
   memoise::memoize(get_missing_data_comment,
                    cache = h2h_cache)
@@ -263,7 +278,7 @@ app$callback(
 app$callback(
   output("history_comment", "children"),
   list(
-    input("input_bname", "value")
+    input("input_bname", "children")
   ),
   memoise::memoize(
     get_history_comment,
@@ -273,7 +288,7 @@ app$callback(
 app$callback(
   output("location_comment", "children"),
   list(
-    input("input_bname", "value")
+    input("input_bname", "children")
   ),
   memoise::memoize(
     get_location_comment,
@@ -284,7 +299,7 @@ app$callback(
 app$callback(
   output("operative_score", "children"),
   list(
-    input("input_bname", "value")
+    input("input_bname", "children")
   ),
   memoise::memoize(
     get_operative_comment,
@@ -298,7 +313,7 @@ app$callback(
     output("overall_risk_score", "color")
   ),
   list(
-    input("input_bname", "value")
+    input("input_bname", "children")
   ),
 
   memoise::memoize(
