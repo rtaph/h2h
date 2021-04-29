@@ -176,7 +176,8 @@ build_graph <- function(vbr_file = "data/vbr.rda",
   variables <- c("BusinessName", "LicenceNumber", "BusinessTradeName",
                  "BusinessType", "BusinessSubType", "Status", "year",
                  "NumberofEmployees", "foreign_ctl", "perc_missing",
-                 "PostalCode", "LocalArea", "Country", "lat", "lon", "CCID", "PID")
+                 "PostalCode", "LocalArea", "Country", "lat", "lon",
+                 "prov_cleaned", "CCID", "PID")
   for (x in variables) {
     igraph::vertex_attr(g, x) <- nodes[i, ][[x]]
   }
