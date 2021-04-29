@@ -34,6 +34,9 @@ custom_css <- function() {
   # Footnote text
   css$sources <- list("font-size" = "xx-small")
 
+  # Legend
+  css$small <- list("font-size" = "small")
+
   css$no_left_pad <- list("margin-left" = "0px")
 
   # Plotly fonts
