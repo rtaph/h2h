@@ -16,8 +16,8 @@ library(here)
 devtools::load_all(".")
 
 # define column names
-tbl_col_ids <- c("NAME", "LEVEL", "CCTL")
-tbl_col_names <- c("Name", "Level", "Country of Control")
+tbl_col_ids <- c("NAME", "LEVEL", "CRES")
+tbl_col_names <- c("Name", "Level", "Country")
 
 # Load CSS Styles
 css <- custom_css()
