@@ -22,6 +22,9 @@ tbl_col_names <- c("Name", "Level", "Country of Control")
 # Load CSS Styles
 css <- custom_css()
 
+# set cache
+h2h_cache <- cachem::cache_disk(rappdirs::user_cache_dir("h2h"))
+
 # bnames <- as.character(unique(forcats::fct_c(h2h::combined_data$BusinessName,
 #                   h2h::combined_data$BusinessTradeName)))
 # bnames <- bnames[!is.na(bnames) & !bnames == ""]
@@ -185,7 +188,7 @@ app$callback(
   list(input("input_bname", "value")),
   memoise::memoize(
     make_related_co_table,
-    cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h"))
+    cache = h2h_cache
   )
 )
 
@@ -198,7 +201,7 @@ app$callback(
   list(input("input_bname", "value")),
   memoise::memoize(
     make_co_type,
-    cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h"))
+    cache = h2h_cache
   )
 )
 
@@ -224,7 +227,7 @@ app$callback(
     htmlwidgets::saveWidget(viz, file = tempfile)
     paste(readLines(tempfile), collapse = "")
   },
-  cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h")))
+  cache = h2h_cache)
 )
 
 app$callback(
@@ -241,7 +244,7 @@ app$callback(
     input("input_bname", "value")
   ),
   memoise::memoize(get_missing_data_comment,
-                   cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h")))
+                   cache = h2h_cache)
 )
 
 app$callback(
@@ -251,7 +254,7 @@ app$callback(
   ),
   memoise::memoize(
     get_history_comment,
-    cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h"))
+    cache = h2h_cache
   )
 )
 app$callback(
@@ -261,7 +264,7 @@ app$callback(
   ),
   memoise::memoize(
     get_location_comment,
-    cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h"))
+    cache = h2h_cache
   )
 )
 
@@ -272,7 +275,7 @@ app$callback(
   ),
   memoise::memoize(
     get_operative_comment,
-    cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h"))
+    cache = h2h_cache
   )
 )
 
@@ -287,7 +290,7 @@ app$callback(
 
   memoise::memoize(
     get_overall_risk_score_card,
-    cache = cachem::cache_disk(rappdirs::user_cache_dir("h2h"))
+    cache = h2h_cache
   )
 )
 
