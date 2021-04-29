@@ -51,6 +51,7 @@ make_co_type <- function(input_value) {
     slice(1) %>%
     select(BusinessType) %>%
     dashTable::df_to_list()
+  selected_PID <- selected_PID[!is.na(selected_PID)]
   columns <- c("BusinessType") %>% purrr::map(function(col) list(name = "Primary Business Type", id = col))
   list(selected_PID, columns)
 
