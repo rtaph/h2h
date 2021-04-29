@@ -22,13 +22,25 @@ tbl_col_names <- c("Name", "Level", "Country of Control")
 # Load CSS Styles
 css <- custom_css()
 
+legend <- "
+**Join Rules for Graph Links**
+
+- **R1:** Exact match on postal code, business name, business type, and business sub-type.
+- **R2:** Exact match on postal code, business name, and business type.
+- **R3:** Exact match on business name, business type, and business sub-type.
+- **R4:** Exact match on business name and GPS coordinates.
+- **R5:** Exact match on trade name and GPS coordinates.
+- **R6:** Exact match on business name and trade name.
+- **R7:** Exact match on business name only.
+- **R8:** Business name in one year matches trade name in the next year (or vice versa).
+- **R9:** Exact match on postal code with a phonetic match on the businesss name.
+- **R10:** Exact match on postal code with a phonetic match on the trade name.
+- **R11:** Exact match on postal code, phonetic match between business name and trade name.
+- **R12:** Match to the StatsCan Inter-Company Ownership database.
+"
+
 # set cache
 h2h_cache <- cachem::cache_disk(rappdirs::user_cache_dir("h2h"))
-
-# bnames <- as.character(unique(forcats::fct_c(h2h::combined_data$BusinessName,
-#                   h2h::combined_data$BusinessTradeName)))
-# bnames <- bnames[!is.na(bnames) & !bnames == ""]
-# bnames <- c(head(bnames, 20))
 
 # app layout
 app <- Dash$new(external_stylesheets = dbcThemes$BOOTSTRAP)
@@ -57,13 +69,14 @@ app$layout(
                 id = "input_bname",
                 # value = "Listel Canada Ltd"         # for testing
                 # value = "Westfair Foods Ltd"
-                value = "Gyoza Bar Ltd"           # for testing
+                value = "Gyoza Bar Ltd"          # for testing
                 # value = "VLC Leaseholds Ltd"      # for testing
               ),
               htmlBr(),
               dbcLabel("Address:"),
               dccInput(),
-              htmlHr()
+              htmlHr(),
+              dccMarkdown(legend, style = css$small)
             )
           ),
           htmlBr(),
