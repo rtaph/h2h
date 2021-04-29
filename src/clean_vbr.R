@@ -51,9 +51,7 @@ data_vbr <- function(path = "data-raw/license_data.csv",
     prov_cleaned = col_factor(),
     Country = col_factor(),
     Province = col_skip(),
-    City = col_skip(),
-    PID = col_double(),
-    CCID = col_double()
+    City = col_skip()
   )
 
   vbr_raw <- read_csv(path, col_types = colspec)
@@ -69,7 +67,7 @@ data_vbr <- function(path = "data-raw/license_data.csv",
     select(-Geom)
 
   if (save_to_pkg) {
-    usethis::use_data(vbr, overwrite = TRUE)
+    save(vbr, file = here::here("data-processed/vbr.rda"))
   }
   invisible(vbr)
 }

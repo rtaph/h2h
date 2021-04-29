@@ -17,10 +17,6 @@ make_related_co_table <- function(input_value) {
     pull(PID) %>%
     unique()
 
-  # selected_PID <- vbr %>%
-  #   filter(BusinessName == input_value) %>%
-  #   pull(PID) %>%
-  #   unique()
   if (all(is.na(selected_PID))) {
     # if no related companies found, return empty list.
     data <- list()

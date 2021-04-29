@@ -28,7 +28,7 @@ data_statscan <- function(path = "data-processed/combined_data.csv",
   sc_proc <- sc_raw %>%
     as_tibble() %>%
     select(CCID, PID, NAME, foreign_ctl = CCTL) %>%
-    mutate(across(c(PID, CCID), list(C = ~ paste0("C", .)))) 
+    mutate(across(c(PID, CCID), list(C = ~ paste0("C", .))))
 
   # Edgelist: Statscan -> Statscan
   # el2 <- sc_proc %>%
@@ -88,12 +88,12 @@ phonetic <- function(x, algorithm = phonics::metaphone) {
 #' \dontrun{
 #' build_graph(save_to_pkg = FALSE)
 #' }
-build_graph <- function(vbr_file = "data/vbr.rda",
+build_graph <- function(vbr_file = "data-processed/vbr.rda",
                         statscan = data_statscan(),
                         save_to_pkg = TRUE) {
   if (!fs::file_exists(vbr_file)) {
-    rlang::abort("data/vbr.rda does not exists. Please run 'make all' to
-                 build it.")
+    rlang::abort(stringr::str_glue("{vbr_file} does not exist. Please run \\
+                                    'make all' to build it."))
   } else {
     load(vbr_file)
   }
