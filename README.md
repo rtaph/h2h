@@ -24,7 +24,7 @@ Authors : Debananda Sarkar, Rafael Pilliard Hellwig, Selma Duric, Tanmay Sharma,
   - `python src/get_google_data.py -i "data-raw/license_data.csv" -o "data-processed" --name "First Memorial Services Ltd"`
   - `python src/get_google_data.py -i "data-raw/license_data.csv" -o "data-processed" --type "Casino"`
   
-  Note: In order to access GoogleMaps data, this code requires secret API_Key. 
+      Note: In order to access GoogleMaps data, this code requires secret API_Key. 
   
 ### Data:
 
@@ -34,4 +34,4 @@ Data used within the app includes:
 
 2. Statistics Canada Inter-corporate Ownership: [fourth quarter 2019](https://www150.statcan.gc.ca/n1/pub/61-517-x/61-517-x2019004-eng.htm) under the Statistics Canada Open Licence.
 
-3. GoogleMaps
+3. GoogleMaps [API](https://developers.google.com/maps/documentation/javascript/reference).
