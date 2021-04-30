@@ -60,7 +60,7 @@ def main(target_file):
 
         dataset_df = dataset_df.assign(NumberofEmployees = dataset_df.NumberofEmployees.apply(lambda x: np.nan if x=="000" else x))
         dataset_df = dataset_df.assign(perc_missing = dataset_df.isnull().sum(axis=1)/dataset_df.shape[1]*100)
-        dataset_df = dataset_df.assign(prov_cleaned = dataset_df.Province.str.lower.apply(prov_cleanup))
+        dataset_df = dataset_df.assign(prov_cleaned = dataset_df.Province.str.lower().apply(prov_cleanup))
         dataset_df = dataset_df.assign(age =  datetime.today().year-2000- dataset_df.FOLDERYEAR)
 
 
