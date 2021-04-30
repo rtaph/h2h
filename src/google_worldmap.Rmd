@@ -1,0 +1,139 @@
+---
+title: "Google Worldmap"
+author: "Zeliha Ural Merpez"
+date: "29 April 2021"
+output:
+  html_document:
+    df_print: paged
+---
+
+This is an R Notebook for figure representation of data obtained by Google Maps API.
+
+1. Download necessary packages.
+
+```{r, include = FALSE}
+library(tidyr)
+library(dplyr)
+library(tidyverse)
+library(stringr)
+library(leaflet)
+library(htmlwidgets)
+```
+
+2. Download data for only BusinessType Office first 1000 distinct names. 
+
+```{r, echo = FALSE}
+licence_data <- read.csv('../data-processed/office1000.csv') %>% 
+  select(BusinessName, lng, lat) %>% 
+  mutate(info = "Licence Data") 
+licence_data
+```
+
+3. Display these on Map
+
+```{r, echo = FALSE}
+office_map <- leaflet(licence_data) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addAwesomeMarkers(lng=~lng, lat=~lat,
+                    popup=~BusinessName,
+                    clusterOptions = markerClusterOptions())
+office_map
+```
+
+
+Save the Map.
+
+```{r, include = FALSE}
+saveWidget(office_map, file="../office_map.html")
+```
+
+4. Get Google Maps Data
+
+```{r, include = FALSE}
+google_map <- read.csv('../data-processed/google_map_office1000.csv') %>% 
+  select(name, lat, lng) %>% 
+  mutate(info = "GoogleMaps") %>% 
+  rename(BusinessName = name)
+google_map
+
+```
+
+5. Combine two data frames into one for figure.
+
+```{r, echo = FALSE}
+figure_df <- rbind(licence_data, google_map) %>% 
+  arrange(BusinessName)
+figure_df <- unique(figure_df)
+
+figure_df$info <- factor(figure_df$info)
+
+new <- c("red", "black")[figure_df$info]
+
+icons <- awesomeIcons(
+  icon = 'ios-close',
+  iconColor = 'black',
+  library = 'ion',
+  markerColor = new
+)
+
+unique_markers_map <- leaflet(figure_df) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addAwesomeMarkers(lng=~lng, lat=~lat, icon=icons,
+                    popup=~BusinessName,
+                    label=~as.character(info),
+                    clusterOptions = markerClusterOptions())
+unique_markers_map
+```
+
+Save the output.
+
+```{r, include = FALSE}
+saveWidget(unique_markers_map, file="../google_map.html")
+
+```
+
+6. Check some Business Names
+
+```{r, echo = FALSE}
+single_fig_1 <-  figure_df %>% 
+  filter(BusinessName == "King Day Holdings Ltd")
+
+new <- c("red", "green")[single_fig_1$info]
+
+icons <- awesomeIcons(
+  icon = 'ios-close',
+  iconColor = 'black',
+  library = 'ion',
+  markerColor = new
+)
+
+unique_markers_map <- leaflet(single_fig_1) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addAwesomeMarkers(lng=~lng, lat=~lat, icon=icons,
+                    popup=~BusinessName,
+                    label=~as.character(info))
+unique_markers_map
+```
+
+```{r, echo = FALSE}
+single_fig_2 <-  figure_df %>% 
+  filter(str_detect(BusinessName, "RBC"))
+
+new <- c("red", "green")[single_fig_2$info]
+
+icons <- awesomeIcons(
+  icon = 'ios-close',
+  iconColor = 'black',
+  library = 'ion',
+  markerColor = new
+)
+
+unique_markers_map <- leaflet(single_fig_2) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addAwesomeMarkers(lng=~lng, lat=~lat, icon=icons,
+                    popup=~BusinessName,
+                    label=~as.character(info))
+unique_markers_map
+```
+
+7. Thanks for listening.
