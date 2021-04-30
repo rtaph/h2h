@@ -10,7 +10,7 @@
 #' make_related_co_table(input_value)
 #'
 make_related_co_table <- function(input_value) {
-  input_value <- closest_business_name(input_value)
+  # input_value <- closest_business_name(input_value)
   network <- get_ego(input_value)
   selected_PID <- network %N>%
     as_tibble() %>%
@@ -43,7 +43,7 @@ make_related_co_table <- function(input_value) {
 #' make_co_type(input_value)
 #'
 make_co_type <- function(input_value) {
-  input_value <- closest_business_name(input_value)
+  # input_value <- closest_business_name(input_value)
   network <- get_ego(input_value)
   selected_PID <- network %N>%
     as_tibble() %>%
@@ -86,7 +86,7 @@ make_co_type <- function(input_value) {
 #' num_emp_plot(input_value)
 #'
 num_emp_plot <- function(input_value) {
-  input_value <- closest_business_name(input_value)
+  # input_value <- closest_business_name(input_value)
   network <- get_ego(input_value)
   emp_plot <- network %N>%
     as_tibble() %>%
@@ -181,7 +181,7 @@ closest_business_name <- memoise::memoise(
 #' get_overall_risk_score_card(bname)
 #'
 get_overall_risk_score_card <- function(bname) {
-  bname <- closest_business_name(bname)
+  # bname <- closest_business_name(bname)
   r <- calc_risk(bname)
   # pr <- profile_risk(bname)
 
@@ -211,7 +211,7 @@ get_overall_risk_score_card <- function(bname) {
 #' get_missing_data_comment(bname)
 #'
 get_missing_data_comment <- function(bname) {
-  bname <- closest_business_name(bname)
+  # bname <- closest_business_name(bname)
   pr <- profile_risk(bname)
   msg <- if_else(pr$missingdata,
                  str_glue("    ",
@@ -235,7 +235,7 @@ get_missing_data_comment <- function(bname) {
 #' get_history_comment(bname)
 #'
 get_history_comment <- function(bname) {
-  bname <- closest_business_name(bname)
+  # bname <- closest_business_name(bname)
   pr <- profile_risk(bname)
   msg <- if_else(pr$recent,
                  str_glue("    ", "\U274C", "  does not have a long history"),
@@ -254,7 +254,7 @@ get_history_comment <- function(bname) {
 #' get_location_comment(bname)
 #'
 get_location_comment <- function(bname) {
-  bname <- closest_business_name(bname)
+  # bname <- closest_business_name(bname)
   pr <- profile_risk(bname)
 
   msg <- if_else(pr$foreign,
@@ -275,7 +275,7 @@ get_location_comment <- function(bname) {
 #' get_operative_comment(bname)
 #'
 get_operative_comment <- function(bname) {
-  bname <- closest_business_name(bname)
+  # bname <- closest_business_name(bname)
   pr <- profile_risk(bname)
   msg <- if_else(pr$status,
                  str_glue("    ", "\U274C", "  is inactive or shut"),
@@ -283,40 +283,29 @@ get_operative_comment <- function(bname) {
   msg
 }
 
-
-#' Calculates risk score
-#'
-#' @param bname str indicates business name
-#'
-#' @return
-#'
-#' @examples
-#' bname = "Gyoza Bar Ltd"
-#' make_score_card(bname)
-#'
-make_score_card <- function(bname) {
-  bname <- closest_business_name(bname)
-  r <- calc_risk(bname)
-  pr <- profile_risk(bname)
-
-  lev <- case_when(
-    r <= 1 ~ "low risk",
-    r <= 3 ~ "medium risk",
-    TRUE ~ "high risk"
-  )
-
-  color_back <- case_when(
-    r <= 1 ~ "green",
-    r <= 3 ~ "yellow",
-    TRUE ~ "red"
-  )
-
-  msg <- c()
-  msg[1] <- if_else(pr$missingdata, "has a lot of missing data", NA_character_)
-  msg[2] <- if_else(pr$recent, "does not have a long history", NA_character_)
-  msg[3] <- if_else(pr$foreign, "is not located in Canada", NA_character_)
-  msg[4] <- if_else(pr$status, "is inactive or shut", NA_character_)
-  msg <- glue::glue_collapse(na.omit(msg), sep = ", ", last = " and ")
-
-  list(str_glue("Risk Score: {r} / 4 ({lev}). This business {msg}."), color_back)
-}
+# make_score_card <- function(bname) {
+#   bname <- closest_business_name(bname)
+#   r <- calc_risk(bname)
+#   pr <- profile_risk(bname)
+# 
+#   lev <- case_when(
+#     r <= 1 ~ "low risk",
+#     r <= 3 ~ "medium risk",
+#     TRUE ~ "high risk"
+#   )
+# 
+#   color_back <- case_when(
+#     r <= 1 ~ "green",
+#     r <= 3 ~ "yellow",
+#     TRUE ~ "red"
+#   )
+# 
+#   msg <- c()
+#   msg[1] <- if_else(pr$missingdata, "has a lot of missing data", NA_character_)
+#   msg[2] <- if_else(pr$recent, "does not have a long history", NA_character_)
+#   msg[3] <- if_else(pr$foreign, "is not located in Canada", NA_character_)
+#   msg[4] <- if_else(pr$status, "is inactive or shut", NA_character_)
+#   msg <- glue::glue_collapse(na.omit(msg), sep = ", ", last = " and ")
+# 
+#   list(str_glue("Risk Score: {r} / 4 ({lev}). This business {msg}."), color_back)
+# }
