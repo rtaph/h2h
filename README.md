@@ -1,4 +1,4 @@
-# h2h
+# CoV Business Risk Dashboard
 
 Group 10 Repository for the ESDC Integrity Hackathon with Simon Fraser University: Canadian Companies Deep Dive.
 
