@@ -44,14 +44,16 @@ def main(target_file):
 
 
     try:
-        source_url="https://opendata.vancouver.ca/explore/dataset/business-licences/download/?format=csv&timezone=America/Los_Angeles&lang=en&use_labels_for_header=true&csv_separator=%3B"
-        dataset_df_1 = pd.read_csv(source_url, sep=";", low_memory=False, dtype={20:'str'} )
+        #source_url="https://opendata.vancouver.ca/explore/dataset/business-licences/download/?format=csv&timezone=America/Los_Angeles&lang=en&use_labels_for_header=true&csv_separator=%3B"
+        first_file = "data-raw/business-licences.csv"
+        dataset_df_1 = pd.read_csv(first_file, sep=";", low_memory=False, dtype={20:'str'} )
 
         dataset_df_1['id'] = dataset_df_1.index + 1
         dataset_df_1['id'] = 'B' + dataset_df_1['id'].astype(str)
 
-        source_url="https://opendata.vancouver.ca/explore/dataset/business-licences-1997-to-2012/download/?format=csv&timezone=America/Los_Angeles&lang=en&use_labels_for_header=true&csv_separator=%3B"
-        dataset_df_2 = pd.read_csv(source_url, sep=";", low_memory=False, dtype={20:'str'} )
+        #source_url="https://opendata.vancouver.ca/explore/dataset/business-licences-1997-to-2012/download/?format=csv&timezone=America/Los_Angeles&lang=en&use_labels_for_header=true&csv_separator=%3B"
+        second_file = "data-raw/business-licences-1997-to-2012.csv"
+        dataset_df_2 = pd.read_csv(second_file, sep=";", low_memory=False, dtype={20:'str'} )
 
         dataset_df_2['id'] = dataset_df_2.index + 1
         dataset_df_2['id'] = 'A' + dataset_df_2['id'].astype(str)
@@ -60,7 +62,7 @@ def main(target_file):
 
         dataset_df = dataset_df.assign(NumberofEmployees = dataset_df.NumberofEmployees.apply(lambda x: np.nan if x=="000" else x))
         dataset_df = dataset_df.assign(perc_missing = dataset_df.isnull().sum(axis=1)/dataset_df.shape[1]*100)
-        dataset_df = dataset_df.assign(prov_cleaned = dataset_df.Province.str.lower().apply(prov_cleanup))
+        dataset_df = dataset_df.assign(prov_cleaned = dataset_df.Province.str.upper().apply(prov_cleanup))
         dataset_df = dataset_df.assign(age =  datetime.today().year-2000- dataset_df.FOLDERYEAR)
 
 
