@@ -1,4 +1,4 @@
-# h2h
+# CoV Business Risk Dashboard
 
 Group 10 Repository for the ESDC Integrity Hackathon with Simon Fraser University: Canadian Companies Deep Dive.
 
@@ -13,9 +13,25 @@ Authors : Debananda Sarkar, Rafael Pilliard Hellwig, Selma Duric, Tanmay Sharma,
 
 
 ### Code Usage:
-1. Creating csv and comparison of Business Licences data and GoogleMaps data: Examples to run from GitBash
+1. Executing scripts and downloading all required file sources to run app:
+  - To execute scripts, in command line type `make all` from command line to execute scripts.
+  - To clear all generated files found in `data-processed` and `data` directories, type `make clean` from command line.
+
+2. Creating csv and comparison of Business Licences data and GoogleMaps data: 
+
+      Examples to run from GitBash:
   - `python src/get_google_data.py -i "data-raw/license_data.csv" -o "data-processed"`
   - `python src/get_google_data.py -i "data-raw/license_data.csv" -o "data-processed" --name "First Memorial Services Ltd"`
   - `python src/get_google_data.py -i "data-raw/license_data.csv" -o "data-processed" --type "Casino"`
   
-  Note: In order to access GoogleMaps data, this code requires secret API_Key. 
+      Note: In order to access GoogleMaps data, this code requires secret API_Key. 
+  
+### Data:
+
+Data used within the app includes:
+
+1. City of Vancouver Business Licence Data ([1997-2012](https://opendata.vancouver.ca/explore/dataset/business-licences-1997-to-2012/information/?disjunctive.status&disjunctive.businesssubtype), [2013-2021](https://opendata.vancouver.ca/explore/dataset/business-licences/information/?disjunctive.status&disjunctive.businesssubtype)) under the Open Government Licence – Vancouver Licence.
+
+2. Statistics Canada Inter-corporate Ownership: [fourth quarter 2019](https://www150.statcan.gc.ca/n1/pub/61-517-x/61-517-x2019004-eng.htm) under the Statistics Canada Open Licence.
+
+3. GoogleMaps [API](https://developers.google.com/maps/documentation/javascript/reference).
