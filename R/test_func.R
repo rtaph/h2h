@@ -146,15 +146,26 @@ num_emp_plot <- function(input_value) {
 
   input_value <- unlist(input_value)
 
-  temp <- unique(igraph::vertex_attr(g, "BusinessName"))
+  #temp <- unique(igraph::vertex_attr(g, "BusinessName"))
   # sanitized_input_value <- stringr::str_replace(temp, "[^a-zA-Z\\d\\s]", " ")
   # temp[stringr::str_match(temp, input_value)]
 
   # stringr::str_subset(temp, input_value)
-  candidates <- grep(input_value, temp, value = TRUE, ignore.case = TRUE)
+  network <- get_ego(input_value)
+  #candidates1 <- unique(igraph::vertex_attr(network, "BusinessName"))
+  #candidates2 <- unique(igraph::vertex_attr(network, "BusinessTradeName"))
+
+  network %>%
+    as_tibble %>%
+    count(BusinessName, sort = TRUE) %>%
+    slice(1) %>%
+    pull(BusinessName)
+
+  #candidates <- grep(input_value, temp, fixed = TRUE,
+  #                   value = TRUE, ignore.case = TRUE)
   # candidates <- agrep(input_value, candidates, value = TRUE, ignore.case = TRUE)
 
-  candidates[which.min(stringdist::stringdist(input_value, candidates))[1]]
+  #candidates[which.min(stringdist::stringdist(input_value, candidates))[1]]
 }
 
 #' Find the closest matching Business
