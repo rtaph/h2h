@@ -35,7 +35,16 @@
 
   # Are any inactive?
   closed_status <- c("Gone Out of Business", "Cancelled", "Inactive")
-  metrics$status <- any(nodes$Status %in% closed_status)
+  closed_in_last_year <- nodes %>%
+    filter(year == max(year, na.rm = TRUE)) %>%
+    mutate(closed = Status %in% closed_status,
+           closed = factor(closed, levels = c(TRUE, FALSE))) %>%
+    group_by(closed, .drop = FALSE) %>%
+    count() %>%
+    ungroup %>%
+    mutate(p = n / sum(n)) %>%
+    filter(closed == "TRUE")
+  metrics$status <- closed_in_last_year$p == 1
 
   metrics
 }

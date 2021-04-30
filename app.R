@@ -33,7 +33,7 @@ legend <- "
 - **R6:** Exact match on business name and trade name.
 - **R7:** Exact match on business name only.
 - **R8:** Business name in one year matches trade name in the next year (or vice versa).
-- **R9:** Exact match on postal code with a phonetic match on the businesss name.
+- **R9:** Exact match on postal code with a phonetic match on the business name.
 - **R10:** Exact match on postal code with a phonetic match on the trade name.
 - **R11:** Exact match on postal code, phonetic match between business name and trade name.
 - **R12:** Match to the StatsCan Inter-Company Ownership database.
