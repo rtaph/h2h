@@ -21,10 +21,10 @@ data-processed/combined_data.csv : src/join_license_linked_corp.py data-raw/lice
 data-processed/filtered_hierarchy_data.feather : src/join_license_linked_corp.py data-processed/combined_data.csv data-raw/linked_corp_data.csv
 	python src/filter_hierarchy_file.py --combined_file=data-processed/combined_data.csv  --company_hierarchy_file=data-raw/linked_corp_data.csv  --target_file=data-processed/filtered_hierarchy_data.feather
 
-data/vbr.rda : src/clean_vbr.R data-processed/combined_data.csv
+data-processed/vbr.rda : src/clean_vbr.R data-processed/combined_data.csv
 	Rscript src/clean_vbr.R
 
-data/g.rda : src/make_graph.R data/vbr.rda data-raw/linked_corp_data.csv data-processed/combined_data.csv
+data/g.rda : src/make_graph.R data-processed/vbr.rda data-raw/linked_corp_data.csv data-processed/combined_data.csv
 	Rscript src/make_graph.R
 
 clean :
@@ -38,5 +38,5 @@ clean-processed :
 	rm -rf data-processed/combined_data.csv
 	rm -rf data-processed/filtered_hierarchy_data.csv
 	rm -rf data-processed/filtered_hierarchy_data.feather
-	rm -rf data/vbr.rda
+	rm -rf data-processed/vbr.rda
 	rm -rf data/g.rda
