@@ -48,8 +48,9 @@ make_co_type <- function(input_value) {
   selected_PID <- network %N>%
     as_tibble() %>%
     arrange(desc(year)) %>%
-    slice(1) %>%
+    slice_max(year, n = 1) %>%
     select(BusinessType) %>%
+    unique() %>%
     dashTable::df_to_list()
 
   columns <- c("BusinessType") %>% purrr::map(function(col) list(name = "Primary Business Type", id = col))
@@ -287,25 +288,25 @@ get_operative_comment <- function(bname) {
 #   bname <- closest_business_name(bname)
 #   r <- calc_risk(bname)
 #   pr <- profile_risk(bname)
-# 
+#
 #   lev <- case_when(
 #     r <= 1 ~ "low risk",
 #     r <= 3 ~ "medium risk",
 #     TRUE ~ "high risk"
 #   )
-# 
+#
 #   color_back <- case_when(
 #     r <= 1 ~ "green",
 #     r <= 3 ~ "yellow",
 #     TRUE ~ "red"
 #   )
-# 
+#
 #   msg <- c()
 #   msg[1] <- if_else(pr$missingdata, "has a lot of missing data", NA_character_)
 #   msg[2] <- if_else(pr$recent, "does not have a long history", NA_character_)
 #   msg[3] <- if_else(pr$foreign, "is not located in Canada", NA_character_)
 #   msg[4] <- if_else(pr$status, "is inactive or shut", NA_character_)
 #   msg <- glue::glue_collapse(na.omit(msg), sep = ", ", last = " and ")
-# 
+#
 #   list(str_glue("Risk Score: {r} / 4 ({lev}). This business {msg}."), color_back)
 # }
